@@ -1,0 +1,31 @@
+# secrets — NEVER commit
+.env
+.env.deploy
+*.tfvars
+.terraform/
+terraform.tfstate
+terraform.tfstate.*
+.terraform.lock.hcl
+
+# python
+.venv/
+__pycache__/
+*.pyc
+
+# local data / runtime
+.redis_data/
+*.log
+
+# os
+.DS_Store
+agentic-rag-aws/
+
+# local database data dirs
+.minio_data/
+.opensearch_data/
+.pg_data/
+
+# stray / generated files
+0
+architecture.png
+architecture-clean.png

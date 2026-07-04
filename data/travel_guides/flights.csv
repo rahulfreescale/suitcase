@@ -1,0 +1,91 @@
+flight_id,origin,destination,depart_date,depart_time,price_usd,airline,stops,duration_hours,cabin,red_eye,refundable,baggage_included
+FL0001,Singapore,Lisbon,2026-06-12,10:00,1150,BA,1,14,economy,no,no,yes
+FL0002,Singapore,Lisbon,2026-09-18,23:00,610,Icelandair,2,17,economy,yes,no,no
+FL0003,Singapore,Lisbon,2026-11-05,01:00,720,Emirates,1,17,economy,yes,no,yes
+FL0004,San Francisco,Lisbon,2026-06-12,16:00,1290,Aeromexico,0,21,economy,no,no,yes
+FL0005,San Francisco,Lisbon,2026-09-18,13:00,560,TAP,0,21,economy,no,yes,no
+FL0006,San Francisco,Lisbon,2026-11-05,01:00,720,Thai,1,17,economy,yes,no,yes
+FL0007,Dubai,Lisbon,2026-06-12,10:00,1150,ANA,1,14,economy,no,yes,no
+FL0008,Dubai,Lisbon,2026-09-18,06:00,1150,Emirates,0,9,premium,no,yes,yes
+FL0009,Dubai,Lisbon,2026-11-05,01:00,720,Air Canada,0,14,economy,yes,yes,yes
+FL0010,San Francisco,Tokyo,2026-06-12,01:00,1150,Icelandair,2,14,economy,yes,no,yes
+FL0011,San Francisco,Tokyo,2026-09-18,08:00,1290,Icelandair,0,11,premium,no,yes,yes
+FL0012,San Francisco,Tokyo,2026-11-05,08:00,720,Iberia,1,11,economy,no,no,no
+FL0013,Dubai,Tokyo,2026-06-12,22:00,720,Emirates,0,14,premium,yes,yes,yes
+FL0014,Dubai,Tokyo,2026-09-18,23:00,1290,TAP,1,6,economy,yes,no,yes
+FL0015,Dubai,Tokyo,2026-11-05,16:00,1150,BA,1,6,economy,no,yes,yes
+FL0016,Singapore,Tokyo,2026-06-12,23:00,720,BA,1,9,economy,yes,no,no
+FL0017,Singapore,Tokyo,2026-09-18,23:00,610,ANA,1,9,economy,yes,no,yes
+FL0018,Singapore,Tokyo,2026-11-05,06:00,1150,Air NZ,0,14,economy,no,no,no
+FL0019,San Francisco,Barcelona,2026-06-12,01:00,830,Aeromexico,1,11,economy,yes,no,yes
+FL0020,San Francisco,Barcelona,2026-09-18,06:00,720,TAP,0,21,economy,no,yes,no
+FL0021,San Francisco,Barcelona,2026-11-05,08:00,610,Air Canada,0,9,premium,no,yes,yes
+FL0022,Singapore,Barcelona,2026-06-12,22:00,720,ANA,1,21,economy,yes,no,yes
+FL0023,Singapore,Barcelona,2026-09-18,16:00,610,BA,1,6,economy,no,no,yes
+FL0024,Singapore,Barcelona,2026-11-05,08:00,1150,Air Canada,0,6,economy,no,yes,no
+FL0025,London,Barcelona,2026-06-12,23:00,560,Aeromexico,2,6,economy,yes,yes,no
+FL0026,London,Barcelona,2026-09-18,23:00,420,Air NZ,1,14,economy,yes,yes,yes
+FL0027,London,Barcelona,2026-11-05,01:00,610,Air Canada,1,9,economy,yes,no,yes
+FL0028,San Francisco,Bangkok,2026-06-12,01:00,560,Aeromexico,1,14,economy,yes,no,yes
+FL0029,San Francisco,Bangkok,2026-09-18,01:00,420,Aeromexico,1,11,economy,yes,no,yes
+FL0030,San Francisco,Bangkok,2026-11-05,06:00,830,Thai,2,21,economy,no,no,no
+FL0031,Singapore,Bangkok,2026-06-12,01:00,1150,TAP,1,17,economy,yes,yes,no
+FL0032,Singapore,Bangkok,2026-09-18,13:00,560,Icelandair,1,9,premium,no,yes,yes
+FL0033,Singapore,Bangkok,2026-11-05,23:00,910,Aeromexico,1,17,economy,yes,yes,yes
+FL0034,New York,Bangkok,2026-06-12,13:00,1290,ANA,1,11,economy,no,no,no
+FL0035,New York,Bangkok,2026-09-18,16:00,610,Air Canada,0,9,premium,no,yes,yes
+FL0036,New York,Bangkok,2026-11-05,13:00,830,Emirates,0,9,economy,no,no,no
+FL0037,London,Reykjavik,2026-06-12,01:00,420,Icelandair,2,11,economy,yes,no,no
+FL0038,London,Reykjavik,2026-09-18,10:00,1290,Air NZ,1,14,economy,no,yes,no
+FL0039,London,Reykjavik,2026-11-05,08:00,560,Air Canada,0,14,premium,no,yes,yes
+FL0040,San Francisco,Reykjavik,2026-06-12,08:00,420,BA,0,9,economy,no,yes,no
+FL0041,San Francisco,Reykjavik,2026-09-18,01:00,720,Icelandair,2,14,premium,yes,yes,yes
+FL0042,San Francisco,Reykjavik,2026-11-05,08:00,1150,Thai,1,17,economy,no,yes,no
+FL0043,New York,Reykjavik,2026-06-12,10:00,830,BA,0,9,economy,no,no,no
+FL0044,New York,Reykjavik,2026-09-18,06:00,1290,Air NZ,2,14,economy,no,no,yes
+FL0045,New York,Reykjavik,2026-11-05,23:00,560,Iberia,0,11,economy,yes,no,no
+FL0046,San Francisco,Mexico City,2026-06-12,01:00,420,BA,0,11,economy,yes,no,yes
+FL0047,San Francisco,Mexico City,2026-09-18,01:00,830,ANA,2,17,premium,yes,yes,yes
+FL0048,San Francisco,Mexico City,2026-11-05,16:00,420,Air Canada,1,21,economy,no,no,no
+FL0049,London,Mexico City,2026-06-12,10:00,420,Icelandair,1,17,economy,no,no,yes
+FL0050,London,Mexico City,2026-09-18,08:00,610,Air NZ,2,14,premium,no,yes,yes
+FL0051,London,Mexico City,2026-11-05,08:00,910,Air NZ,1,11,economy,no,yes,no
+FL0052,New York,Mexico City,2026-06-12,01:00,830,ANA,1,17,economy,yes,no,no
+FL0053,New York,Mexico City,2026-09-18,23:00,1150,TAP,2,6,premium,yes,yes,yes
+FL0054,New York,Mexico City,2026-11-05,01:00,720,TAP,2,11,premium,yes,yes,yes
+FL0055,London,Cape Town,2026-06-12,08:00,610,TAP,1,14,premium,no,yes,yes
+FL0056,London,Cape Town,2026-09-18,23:00,720,ANA,0,11,economy,yes,no,yes
+FL0057,London,Cape Town,2026-11-05,01:00,1290,Icelandair,0,21,economy,yes,yes,no
+FL0058,San Francisco,Cape Town,2026-06-12,01:00,1150,Air Canada,1,14,economy,yes,no,no
+FL0059,San Francisco,Cape Town,2026-09-18,22:00,610,Emirates,0,11,premium,yes,yes,yes
+FL0060,San Francisco,Cape Town,2026-11-05,01:00,830,Air NZ,0,11,economy,yes,yes,no
+FL0061,Dubai,Cape Town,2026-06-12,01:00,910,Aeromexico,1,17,premium,yes,yes,yes
+FL0062,Dubai,Cape Town,2026-09-18,13:00,720,BA,0,17,premium,no,yes,yes
+FL0063,Dubai,Cape Town,2026-11-05,23:00,420,BA,1,21,premium,yes,yes,yes
+FL0064,London,Queenstown,2026-06-12,08:00,610,Emirates,2,17,economy,no,yes,no
+FL0065,London,Queenstown,2026-09-18,23:00,1290,ANA,0,21,economy,yes,yes,yes
+FL0066,London,Queenstown,2026-11-05,08:00,1290,Aeromexico,1,11,premium,no,yes,yes
+FL0067,Dubai,Queenstown,2026-06-12,06:00,1150,Air Canada,1,21,premium,no,yes,yes
+FL0068,Dubai,Queenstown,2026-09-18,13:00,560,ANA,0,21,economy,no,yes,no
+FL0069,Dubai,Queenstown,2026-11-05,06:00,560,Icelandair,1,9,economy,no,no,yes
+FL0070,New York,Queenstown,2026-06-12,13:00,910,Iberia,1,14,economy,no,no,yes
+FL0071,New York,Queenstown,2026-09-18,13:00,610,Air NZ,0,6,premium,no,yes,yes
+FL0072,New York,Queenstown,2026-11-05,01:00,610,Air NZ,0,14,economy,yes,no,no
+FL0073,San Francisco,Marrakech,2026-06-12,23:00,1290,Icelandair,1,17,economy,yes,yes,no
+FL0074,San Francisco,Marrakech,2026-09-18,13:00,720,Icelandair,1,14,economy,no,no,no
+FL0075,San Francisco,Marrakech,2026-11-05,16:00,830,TAP,0,21,premium,no,yes,yes
+FL0076,London,Marrakech,2026-06-12,16:00,420,Thai,2,21,premium,no,yes,yes
+FL0077,London,Marrakech,2026-09-18,16:00,910,Iberia,0,21,economy,no,yes,yes
+FL0078,London,Marrakech,2026-11-05,06:00,560,Air Canada,0,11,premium,no,yes,yes
+FL0079,New York,Marrakech,2026-06-12,22:00,910,Iberia,0,6,economy,yes,yes,no
+FL0080,New York,Marrakech,2026-09-18,10:00,910,Air NZ,2,17,economy,no,no,yes
+FL0081,New York,Marrakech,2026-11-05,08:00,830,Iberia,1,6,premium,no,yes,yes
+FL0082,London,Vancouver,2026-06-12,16:00,910,Icelandair,0,14,economy,no,no,no
+FL0083,London,Vancouver,2026-09-18,01:00,1150,Emirates,1,6,economy,yes,no,yes
+FL0084,London,Vancouver,2026-11-05,01:00,910,BA,2,9,economy,yes,yes,no
+FL0085,Dubai,Vancouver,2026-06-12,16:00,560,Thai,0,6,economy,no,yes,no
+FL0086,Dubai,Vancouver,2026-09-18,23:00,610,BA,1,14,economy,yes,no,yes
+FL0087,Dubai,Vancouver,2026-11-05,16:00,560,TAP,1,17,premium,no,yes,yes
+FL0088,San Francisco,Vancouver,2026-06-12,13:00,910,Aeromexico,0,14,premium,no,yes,yes
+FL0089,San Francisco,Vancouver,2026-09-18,06:00,560,ANA,1,17,economy,no,no,no
+FL0090,San Francisco,Vancouver,2026-11-05,06:00,1290,Iberia,0,21,economy,no,no,no

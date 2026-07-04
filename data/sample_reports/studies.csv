@@ -1,0 +1,11 @@
+study_id,study_title,compound,species,route,dose_mg_kg,duration_days,study_type,sex,noael_mg_kg,year,findings_summary
+T123456-2,28-Day Oral Toxicity Study of BAY-1 in Rats,BAY-1,rat,oral,50,28,repeat-dose toxicity,both,15,2022,Mild clinical signs incl piloerection and ataxia at high dose
+T123457-9,13-Week Oral Toxicity Study of BAY-1 in Rats,BAY-1,rat,oral,25,91,repeat-dose toxicity,both,25,2022,No adverse clinical findings observed
+T200110-4,Single-Dose Safety Pharmacology of BAY-7 in Dogs,BAY-7,dog,intravenous,5,1,safety pharmacology,male,1,2023,Transient heart-rate increase at top dose
+T123460-1,4-Week Dermal Toxicity Study of BAY-3 in Rats,BAY-3,rat,dermal,100,28,repeat-dose toxicity,both,30,2023,Dose-dependent skin irritation; reversible
+T123462-7,28-Day Oral Toxicity Study of BAY-9 in Mice,BAY-9,mouse,oral,200,28,repeat-dose toxicity,both,60,2023,Liver enzyme elevations and hepatocellular hypertrophy at high dose
+T200115-3,Cardiovascular Safety Pharmacology of BAY-12 in Monkeys,BAY-12,monkey,intravenous,10,1,safety pharmacology,both,3,2024,Mild transient QT prolongation at top dose
+T123465-5,13-Week Oral Toxicity Study of BAY-3 in Dogs,BAY-3,dog,oral,20,91,repeat-dose toxicity,both,5,2023,Emesis and decreased food consumption at high dose
+T123470-2,28-Day Inhalation Toxicity Study of BAY-9 in Rats,BAY-9,rat,inhalation,5,28,repeat-dose toxicity,both,1,2024,Respiratory tract irritation; nasal epithelial changes
+T123472-8,Single-Dose Toxicokinetics of BAY-1 in Rats,BAY-1,rat,oral,100,1,toxicokinetics,both,100,2022,No adverse findings; dose-proportional exposure
+T200120-6,Respiratory Safety Pharmacology of BAY-7 in Dogs,BAY-7,dog,intravenous,5,1,safety pharmacology,male,5,2023,No effect on respiratory parameters

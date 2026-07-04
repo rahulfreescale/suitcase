@@ -1,0 +1,767 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Suitcase — trip planning assistant</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Inter:wght@400;450;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#141C26; --ink2:#5C6773; --line:#DFDCD3; --paper:#EDE9E0;
+    --card:#FFFFFF; --navy:#1B2A4A; --stamp:#D8452B; --go:#12856A;
+    --board:#0E1622; --board-txt:#F4C542;
+    --shadow:0 2px 4px rgba(20,28,38,.05), 0 18px 44px rgba(20,28,38,.10);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--paper);color:var(--ink);
+    font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5}
+  body{background-image:radial-gradient(circle at 20% 10%, rgba(27,42,74,.04), transparent 40%),radial-gradient(circle at 90% 80%, rgba(216,69,43,.04), transparent 40%)}
+  .wrap{max-width:780px;margin:0 auto;padding:48px 20px 120px}
+  .head{text-align:center;margin-bottom:24px}
+  .brand{font-family:'Archivo',sans-serif;font-weight:800;font-size:30px;letter-spacing:-.02em;color:var(--navy)}
+  .brand .s{color:var(--stamp)}
+  .headsub{margin:6px 0 0;color:var(--ink2);font-size:14px}
+
+  /* ---------- THE TICKET ---------- */
+  .ticket{background:var(--card);border-radius:16px;box-shadow:var(--shadow);
+    position:relative;overflow:hidden;border:1px solid rgba(20,28,38,.06)}
+  .ticket .stripe{height:10px;background:repeating-linear-gradient(90deg,var(--navy) 0 22px,var(--stamp) 22px 30px)}
+  .tk-body{display:flex}
+  .tk-main{flex:1;min-width:0;padding:22px 26px 0}
+  .tk-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+  .airline{font-family:'Archivo',sans-serif;font-weight:800;font-size:15px;letter-spacing:.03em;color:var(--navy);display:flex;align-items:center;gap:8px}
+  .airline .logo{color:var(--stamp);font-size:15px}
+  .cls{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink2);border:1px solid var(--line);padding:5px 10px;border-radius:6px}
+
+  .route{display:flex;align-items:center;gap:20px;margin-bottom:22px}
+  .route .pt .code{font-family:'Archivo',sans-serif;font-weight:800;font-size:34px;line-height:1;color:var(--navy);letter-spacing:-.01em}
+  .route .pt .place{font-size:11.5px;color:var(--ink2);margin-top:6px;line-height:1.35}
+  .route .pt.r{text-align:right}
+  .route .mid{flex:1;color:var(--stamp);display:flex;justify-content:center}
+  .route .mid svg{width:34px;height:34px}
+
+  .cells{display:grid;grid-template-columns:repeat(5,auto);gap:0;border-top:1px dashed var(--line);
+    border-bottom:1px dashed var(--line);margin-bottom:0}
+  .cell{padding:12px 16px 12px 0;border-right:1px solid #F0EEE8}
+  .cell:last-child{border-right:0}
+  .cell .k{font-family:'JetBrains Mono',monospace;font-size:8.5px;letter-spacing:.11em;text-transform:uppercase;color:#A7ADB5}
+  .cell .v{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:15px;color:var(--navy);margin-top:3px;white-space:nowrap}
+
+  .askrow{padding:20px 0 18px}
+  .askrow .lab{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:#9AA1AB;margin-bottom:11px}
+  .askbox{display:flex;gap:10px;align-items:center}
+  .askbox input{flex:1;border:0;outline:0;background:#F6F5F1;font-size:17px;color:var(--ink);font-family:inherit;padding:16px 16px;border-radius:10px;border:1.5px solid var(--line);transition:border-color .15s,background .15s}
+  .askbox input:focus{border-color:var(--navy);background:#fff}
+  .askbox input::placeholder{color:#AEB4BC}
+  .mic-btn{border:1.5px solid var(--line);background:#fff;color:var(--ink2);width:52px;height:52px;
+    border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+    flex-shrink:0;transition:all .15s}
+  .mic-btn:hover{border-color:var(--navy);color:var(--navy)}
+  .mic-btn svg{width:20px;height:20px}
+  .mic-btn.recording{background:var(--stamp);border-color:var(--stamp);color:#fff;
+    animation:micpulse 1.1s ease-in-out infinite}
+  @keyframes micpulse{0%,100%{box-shadow:0 0 0 0 rgba(216,69,43,.45)}50%{box-shadow:0 0 0 8px rgba(216,69,43,0)}}
+  .mic-btn:disabled{opacity:.5;cursor:not-allowed}
+  .listen-btn{margin:14px 24px 20px;display:inline-flex;align-items:center;gap:8px;
+    background:#fff;border:1.5px solid var(--line);color:var(--navy);font-family:'Archivo',sans-serif;
+    font-weight:600;font-size:13px;padding:9px 15px;border-radius:100px;cursor:pointer;transition:all .13s}
+  .listen-btn:hover{border-color:var(--navy);background:#F6F5F1}
+  .listen-btn.playing{background:var(--navy);color:#fff;border-color:var(--navy)}
+  .listen-btn svg{width:15px;height:15px}
+  .board-btn{border:0;background:var(--navy);color:#fff;font-family:'Archivo',sans-serif;font-weight:700;
+    font-size:14px;letter-spacing:.02em;padding:16px 22px;border-radius:10px;cursor:pointer;display:flex;
+    align-items:center;gap:8px;text-transform:uppercase;transition:transform .08s,background .15s;white-space:nowrap}
+  .board-btn:hover{background:#12203c}.board-btn:active{transform:translateY(1px)}
+  .board-btn:disabled{opacity:.5;cursor:not-allowed}
+  .board-btn svg{width:14px;height:14px}
+
+  .barcode{display:flex;align-items:center;justify-content:space-between;gap:14px;
+    border-top:1px dashed var(--line);padding:14px 0 18px}
+  .barcode .bars{width:190px;height:26px;background-image:repeating-linear-gradient(90deg,var(--ink) 0 1.5px,transparent 1.5px 3px,var(--ink) 3px 4px,transparent 4px 7px,var(--ink) 7px 9px,transparent 9px 11px);opacity:.55}
+  .barcode .pnr{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.1em;color:#9AA1AB}
+
+  /* right perforated stub */
+  .tk-stub{width:92px;flex-shrink:0;background:var(--navy);position:relative;
+    display:flex;align-items:center;justify-content:center}
+  .tk-stub:before{content:"";position:absolute;left:-1px;top:0;bottom:0;width:2px;
+    background-image:radial-gradient(circle at center, var(--paper) 3px, transparent 3.5px);
+    background-size:2px 14px;background-repeat:repeat-y}
+  .stub-rot{transform:rotate(90deg);white-space:nowrap;display:flex;align-items:center;gap:14px}
+  .stub-code{font-family:'Archivo',sans-serif;font-weight:800;font-size:18px;color:#fff;letter-spacing:.02em}
+  .stub-k{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.22em;color:var(--board-txt)}
+  .stub-bars{width:70px;height:20px;background-image:repeating-linear-gradient(90deg,#fff 0 1.5px,transparent 1.5px 3.5px);opacity:.6}
+
+    .chips{display:flex;gap:8px;flex-wrap:wrap;margin:16px 2px 0;justify-content:center}
+  .chip{font-size:12.5px;color:var(--ink2);background:var(--card);border:1px solid var(--line);
+    padding:7px 13px;border-radius:100px;cursor:pointer;transition:all .13s;font-family:inherit}
+  .chip:hover{border-color:var(--navy);color:var(--navy)}
+
+  /* ---------- MODE TOGGLE ---------- */
+  .modes{display:flex;gap:0;justify-content:center;margin:18px auto 0;width:fit-content;
+    border:1.5px solid var(--line);border-radius:100px;background:var(--card);overflow:hidden}
+  .mode{font-family:'Archivo',sans-serif;font-weight:600;font-size:13px;color:var(--ink2);
+    padding:9px 20px;cursor:pointer;border:0;background:transparent;transition:all .13s}
+  .mode.on{background:var(--navy);color:#fff}
+
+  /* ---------- THE PLAN (rated day-by-day) ---------- */
+  .plan{padding:22px 24px 8px}
+  .plan-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:16px}
+  .plan-dest{font-family:'Archivo',sans-serif;font-weight:800;font-size:26px;color:var(--navy);letter-spacing:-.01em}
+  .plan-dest small{font-family:'JetBrains Mono',monospace;font-weight:400;font-size:11.5px;color:var(--ink2);margin-left:9px;letter-spacing:.04em}
+  .verdict{font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;
+    color:var(--go);border:1px solid var(--go);border-radius:6px;padding:5px 10px;white-space:nowrap}
+  .verdict.replan{color:var(--stamp);border-color:var(--stamp)}
+  .pchips{padding:2px 0 18px;border-bottom:1px dashed var(--line);margin-bottom:18px;display:flex;flex-direction:column;gap:10px}
+  .chiprow{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .chiplab{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:#9AA1AB;width:120px;flex-shrink:0}
+  .chipset{display:flex;flex-wrap:wrap;gap:7px}
+  .pchip{font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.03em;border-radius:100px;padding:6px 12px;text-transform:uppercase}
+  .pchip.det{background:var(--navy);color:#fff}
+  .pchip.sug{background:#F1EFE9;color:#9AA1AB;border:1px dashed var(--line);cursor:pointer;transition:all .13s}
+  .pchip.sug:hover{background:var(--navy);color:#fff;border-color:var(--navy);border-style:solid}
+  @media(max-width:560px){.chiplab{width:auto}}
+  .pday{padding:2px 0 16px}
+  .pday-head{display:flex;align-items:center;gap:12px;margin-bottom:11px}
+  .pday-num{font-family:'Archivo',sans-serif;font-weight:800;font-size:13px;letter-spacing:.05em;text-transform:uppercase;color:var(--navy)}
+  .fitbar{flex:1;max-width:170px;height:5px;background:#EEEBE3;border-radius:4px;overflow:hidden}
+  .fitbar>span{display:block;height:100%;background:var(--go)}
+  .pfit{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--ink2)}
+  .pblocks{display:grid;grid-template-columns:repeat(3,1fr);gap:11px}
+  .pblk{border:1px solid var(--line);border-radius:10px;padding:12px 13px;background:#FCFBF8;min-height:80px}
+  .pblk .slot{font-family:'JetBrains Mono',monospace;font-size:8.5px;letter-spacing:.11em;text-transform:uppercase;color:#A7ADB5;margin-bottom:6px}
+  .pblk .nm{font-family:'Archivo',sans-serif;font-weight:700;font-size:14px;color:var(--navy);line-height:1.3}
+  .pblk .empty{color:#B8BDC4;font-size:13px;font-style:italic}
+  .ppills{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px}
+  .ppill{font-family:'JetBrains Mono',monospace;font-size:8.5px;letter-spacing:.02em;border-radius:5px;padding:3px 6px}
+  .ppill.EXCELLENT,.ppill.GOOD{background:#E4F1EC;color:var(--go)}
+  .ppill.TOUGH{background:#F6ECD6;color:#B8862B}
+  .ppill.FAIL{background:#F6DDD9;color:#C0392B}
+  .ppill.UNKNOWN{background:#EEEBE3;color:#8A9099}
+  .sktag.UNKNOWN{background:#ECEAE4;color:#8A9099;border:1px dashed #CBC7BC}
+  .skrow.unsure .skbody .why{font-style:italic;color:#8A9099}
+  .fillnote{margin:6px 0 2px;padding:12px 15px;background:#FBF3E8;border:1px solid #F0DFC2;
+    border-radius:10px;font-size:13px;line-height:1.55;color:#8A6A3B}
+  .edithint{font-size:12px;color:#9AA1AB;margin:0 0 14px;font-style:italic}
+  .pblk[draggable="true"]{cursor:grab}
+  .pblk[draggable="true"]:active{cursor:grabbing}
+  .pblk.dragging,.skrow.dragging{opacity:.4}
+  .pblk.drop-hover{border-color:var(--navy);border-style:solid;background:#EEF1F6;box-shadow:0 0 0 2px rgba(27,42,74,.12)}
+  .skrow[draggable="true"]{cursor:grab}
+  .skrow.dragging{opacity:.4}
+  .pdf-btn{border:1.5px solid var(--navy);background:#fff;color:var(--navy);font-family:'Archivo',sans-serif;
+    font-weight:700;font-size:12px;letter-spacing:.03em;text-transform:uppercase;padding:9px 16px;
+    border-radius:8px;cursor:pointer;transition:all .13s}
+  .pdf-btn:hover{background:var(--navy);color:#fff}
+  .pskip{margin-top:4px;border-top:1px dashed var(--line);padding-top:18px}
+  .pskip .h{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--stamp);margin-bottom:3px}
+  .pskip .sub{font-size:13px;color:var(--ink2);margin:0 0 14px}
+  .skrow{display:flex;gap:11px;padding:11px 0;border-top:1px solid #F1EFE9}
+  .sktag{font-family:'JetBrains Mono',monospace;font-size:8.5px;font-weight:700;letter-spacing:.04em;padding:4px 7px;border-radius:5px;height:fit-content;white-space:nowrap}
+  .sktag.TOUGH{background:#F6ECD6;color:#B8862B}
+  .sktag.FAIL{background:#F6DDD9;color:#C0392B}
+  .sktag.UNKNOWN{background:#EEEBE3;color:#8A9099}
+  .skbody .nm{font-family:'Archivo',sans-serif;font-weight:700;font-size:14.5px;color:var(--navy)}
+  .skbody .nm .star{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--stamp);margin-left:7px;letter-spacing:.05em}
+  .skbody .why{font-size:13px;color:var(--ink2);line-height:1.5;margin-top:3px}
+  .skbody .orig{font-family:'JetBrains Mono',monospace;font-size:8.5px;letter-spacing:.06em;text-transform:uppercase;color:#B0B6BD;margin-top:4px}
+  .pfoot{display:flex;justify-content:space-between;align-items:center;border-top:1px dashed var(--line);margin-top:6px;padding:14px 0 4px}
+  .pfoot .bars{width:170px;height:22px;background-image:repeating-linear-gradient(90deg,var(--ink) 0 1.5px,transparent 1.5px 3px,var(--ink) 3px 4px,transparent 4px 7px);opacity:.5}
+  .pfoot .cnt{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--ink2)}
+  @media(max-width:560px){.pblocks{grid-template-columns:1fr}}
+
+  /* ---------- THE ITINERARY (answer) ---------- */
+  .itin{margin-top:22px;background:var(--card);border-radius:16px;box-shadow:var(--shadow);
+    border:1px solid rgba(20,28,38,.06);overflow:hidden;opacity:0;transform:translateY(8px);
+    transition:opacity .35s,transform .35s}
+  .itin.show{opacity:1;transform:none}
+
+  /* the departures-board status line */
+  .status{background:var(--board);color:var(--board-txt);font-family:'JetBrains Mono',monospace;
+    font-size:13px;letter-spacing:.06em;padding:14px 22px;display:flex;align-items:center;gap:12px;
+    text-transform:uppercase}
+  .status .dotpulse{width:9px;height:9px;border-radius:50%;background:var(--board-txt);
+    animation:flip 1s ease-in-out infinite;flex-shrink:0}
+  .status.done{background:#0d2b22;color:#7FE0C0}
+  .status.done .dotpulse{background:#7FE0C0;animation:none}
+  .status .st-txt{overflow:hidden}
+  @keyframes flip{0%,100%{opacity:1}50%{opacity:.25}}
+
+  .print{padding:24px 24px 8px;font-size:15.5px;line-height:1.72;color:var(--ink);min-height:8px}
+  .print p{margin:0 0 14px}
+  .print .cursor{display:inline-block;width:8px;height:17px;background:var(--stamp);vertical-align:-3px;margin-left:2px;animation:blink 1s step-start infinite}
+  @keyframes blink{50%{opacity:0}}
+
+  .clar{margin:0 24px 20px;padding:14px 16px;background:#FBF3E8;border:1px solid #F0DFC2;border-radius:10px;display:flex;gap:11px;align-items:flex-start}
+  .clar svg{width:17px;height:17px;color:var(--stamp);flex-shrink:0;margin-top:2px}
+  .clar b{display:block;font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--stamp);margin-bottom:3px}
+  .clar .q{font-size:14.5px}
+
+  .cites{margin:6px 24px 22px;padding-top:14px;border-top:1px dashed var(--line)}
+  .cites .h{font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:#9AA1AB;margin-bottom:9px}
+  .cite{display:flex;gap:10px;padding:7px 0;font-size:13px;color:var(--ink2);border-top:1px solid #F1EFE9}
+  .cite:first-of-type{border-top:0}
+  .cite .n{font-family:'JetBrains Mono',monospace;color:var(--stamp);flex-shrink:0}
+  .cite .src{color:var(--ink);font-weight:500}
+
+  footer{margin-top:34px;text-align:center;font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.12em;color:#A7ADB4;text-transform:uppercase}
+
+  @media(max-width:560px){
+    .fields{grid-template-columns:repeat(2,1fr);gap:10px 18px}
+    .brand{font-size:26px}.board-btn span{display:none}.board-btn{padding:12px 14px}
+    .tk-head .route{font-size:17px}
+  }
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+  /* ---------- PDF / print (boarding-pass export) ---------- */
+  #printhost{display:none}
+  @media print{
+    body{background:#fff!important;background-image:none!important}
+    .wrap>*{display:none!important}
+    #printhost{display:block!important}
+    .wrap{max-width:none;padding:0}
+    @page{margin:14mm}
+    .pp-doc{font-family:'Inter',sans-serif;color:#141C26}
+    .pp-stripe{height:8px;background:repeating-linear-gradient(90deg,#1B2A4A 0 18px,#D8452B 18px 24px);margin-bottom:16px}
+    .pp-head{display:flex;justify-content:space-between;align-items:baseline;border-bottom:2px solid #141C26;padding-bottom:8px;margin-bottom:14px}
+    .pp-brand{font-family:'Archivo',sans-serif;font-weight:800;font-size:22px;color:#1B2A4A}
+    .pp-brand span{color:#D8452B}
+    .pp-tag{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:.14em;color:#5C6773}
+    .pp-route{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:12px}
+    .pp-dest{font-family:'Archivo',sans-serif;font-weight:800;font-size:30px;color:#1B2A4A}
+    .pp-days{font-family:'JetBrains Mono',monospace;font-size:12px;color:#5C6773}
+    .pp-chips{margin-bottom:16px}
+    .pp-chips span{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.08em;
+      border:1px solid #1B2A4A;color:#1B2A4A;border-radius:10px;padding:3px 8px;margin-right:6px}
+    .pp-day{margin-bottom:14px;break-inside:avoid}
+    .pp-daynum{font-family:'Archivo',sans-serif;font-weight:800;font-size:12px;letter-spacing:.05em;
+      color:#1B2A4A;border-bottom:1px dashed #DFDCD3;padding-bottom:4px;margin-bottom:8px}
+    .pp-slots{display:flex;gap:10px}
+    .pp-slot{flex:1;border:1px solid #DFDCD3;border-radius:8px;padding:9px 10px;min-height:56px}
+    .pp-slotk{font-family:'JetBrains Mono',monospace;font-size:7.5px;letter-spacing:.1em;color:#A7ADB5;margin-bottom:4px}
+    .pp-nm{font-family:'Archivo',sans-serif;font-weight:700;font-size:12.5px;color:#1B2A4A;line-height:1.25}
+    .pp-pl{font-family:'JetBrains Mono',monospace;font-size:8px;color:#12856A;margin-top:4px}
+    .pp-open{font-size:11px;color:#B8BDC4;font-style:italic}
+    .pp-skip{margin-top:12px;border-top:2px solid #141C26;padding-top:10px;break-inside:avoid}
+    .pp-skh{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.12em;color:#D8452B;margin-bottom:8px}
+    .pp-skrow{font-size:11px;line-height:1.45;color:#3A4450;margin-bottom:8px;break-inside:avoid}
+    .pp-skrow b{color:#1B2A4A}
+    .pp-foot{margin-top:16px;font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:.1em;
+      color:#A7ADB4;text-align:center;text-transform:uppercase}
+  }
+</style>
+</head>
+<body>
+<div id="loginBar" style="display:flex;gap:8px;align-items:center;justify-content:center;padding:10px;background:#1B2A4A;color:#fff;font-family:system-ui,sans-serif;font-size:13px">
+  <span id="loginStatus">Sign in to plan trips</span>
+  <input id="loginEmail" type="email" placeholder="email" style="padding:6px 8px;border-radius:6px;border:none;font-size:13px">
+  <input id="loginPass" type="password" placeholder="password" style="padding:6px 8px;border-radius:6px;border:none;font-size:13px">
+  <button id="loginBtn" style="padding:6px 14px;border-radius:6px;border:none;background:#D8452B;color:#fff;font-weight:600;cursor:pointer">Sign in</button>
+</div>
+<div class="wrap">
+  <div class="head">
+    <div class="brand">SUITCASE<span class="s">.</span></div>
+    <p class="headsub">Trip plans that suit you &mdash; grounded, cited, and faithful to your constraints.</p>
+    <div class="modes">
+      <button class="mode on" id="mAsk" data-mode="ask">Ask</button>
+      <button class="mode" id="mPlan" data-mode="plan">Plan a trip</button>
+    </div>
+  </div>
+
+  <!-- THE BOARDING PASS -->
+  <div class="ticket">
+    <div class="stripe"></div>
+    <div class="tk-body">
+      <div class="tk-main">
+        <div class="tk-top">
+          <div class="airline"><span class="logo">✦</span> SUITCASE AIR</div>
+          <div class="cls">Agentic RAG</div>
+        </div>
+        <div class="route">
+          <div class="pt"><div class="code">YOU</div><div class="place">Anywhere you<br>want to go</div></div>
+          <div class="mid"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><polyline points="14 5 21 12 14 19"/></svg></div>
+          <div class="pt r"><div class="code">TRIP</div><div class="place">Planned &amp;<br>ready to board</div></div>
+        </div>
+        <div class="cells">
+          <div class="cell"><div class="k">Flight</div><div class="v">SC&nbsp;001</div></div>
+          <div class="cell"><div class="k">Guides</div><div class="v">10</div></div>
+          <div class="cell"><div class="k">Data</div><div class="v">LIVE</div></div>
+          <div class="cell"><div class="k">Cited</div><div class="v">YES</div></div>
+          <div class="cell"><div class="k">Constraints</div><div class="v">ON</div></div>
+        </div>
+        <div class="askrow">
+          <div class="lab">Where to? — ask anything about your trip</div>
+          <div class="askbox">
+            <input id="q" placeholder="e.g. best neighborhoods in Lisbon" autocomplete="off"/>
+            <button class="mic-btn" id="mic" title="Hold to speak, or tap to start/stop">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+            </button>
+            <button class="board-btn" id="send"><span>Board</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="barcode"><div class="bars"></div><div class="pnr">PNR&nbsp;&middot;&nbsp;SUITCS</div></div>
+      </div>
+      <div class="tk-stub">
+        <div class="stub-rot">
+          <div class="stub-code">SC&nbsp;001</div>
+          <div class="stub-k">BOARDING PASS</div>
+          <div class="stub-bars"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="chips">
+    <button class="chip">Best neighborhoods in Lisbon?</button>
+    <button class="chip">Family-friendly hotels in Lisbon under $200</button>
+    <button class="chip">Is Lisbon good for wheelchair travel?</button>
+    <button class="chip">Cheapest non-stop flights to Barcelona</button>
+  </div>
+
+  <!-- THE ITINERARY -->
+  <section class="itin" id="itin">
+    <div class="status" id="status"><span class="dotpulse"></span><span class="st-txt" id="sttxt">Boarding…</span></div>
+    <div class="print" id="print"></div>
+    <div class="plan" id="planout" style="display:none"></div>
+    <div id="extra"></div>
+  </section>
+  <div id="printhost"></div>
+
+  <footer>Grounded &middot; Cited &middot; Constraint-faithful</footer>
+</div>
+
+<script>
+// ---- Auth layer: in-app Cognito login over plain HTTP ----------------------
+// Calls Cognito's InitiateAuth REST API directly (no SDK), stores the IdToken in
+// memory, and attaches it to every /plan and /ask request. Works without HTTPS
+// because the token is fetched via a direct API call, not an OAuth redirect.
+let AUTH = { token: null, cfg: null };
+async function loadAuthConfig(){
+  try { AUTH.cfg = await (await fetch("/config")).json(); }
+  catch(e){ AUTH.cfg = { auth_enabled:false }; }
+  // if auth is off (local dev), no login needed
+  if(!AUTH.cfg.auth_enabled){ const lb=document.getElementById("loginBar"); if(lb) lb.style.display="none"; }
+}
+async function cognitoLogin(email, password){
+  const region = AUTH.cfg.region, clientId = AUTH.cfg.cognito_client_id;
+  const res = await fetch(`https://cognito-idp.${region}.amazonaws.com/`, {
+    method:"POST",
+    headers:{ "Content-Type":"application/x-amz-json-1.1",
+              "X-Amz-Target":"AWSCognitoIdentityProviderService.InitiateAuth" },
+    body: JSON.stringify({
+      AuthFlow:"USER_PASSWORD_AUTH", ClientId:clientId,
+      AuthParameters:{ USERNAME:email, PASSWORD:password }
+    })
+  });
+  if(!res.ok){ throw new Error("login failed ("+res.status+")"); }
+  const data = await res.json();
+  AUTH.token = data.AuthenticationResult.IdToken;
+  return AUTH.token;
+}
+// wrap fetch so /plan and /ask automatically carry the token
+function authedFetch(url, opts){
+  opts = opts || {};
+  if(AUTH.token){
+    opts.headers = Object.assign({}, opts.headers, { "Authorization":"Bearer "+AUTH.token });
+  }
+  return fetch(url, opts);
+}
+function isLoggedIn(){ return !AUTH.cfg || !AUTH.cfg.auth_enabled || !!AUTH.token; }
+
+const STAGE_LABELS={clarify:"Clarifying your request",planner:"Planning the trip",researcher:"Researching guides & data",reflection:"Checking the evidence",writer:"Writing your itinerary"};
+const $=s=>document.querySelector(s);
+const qEl=$("#q"),sendEl=$("#send"),itin=$("#itin"),statusEl=$("#status"),sttxt=$("#sttxt"),printEl=$("#print"),extraEl=$("#extra");
+let streaming=false;
+const micEl=document.querySelector("#mic");
+
+function setStatus(txt,done){ statusEl.classList.toggle("done",!!done); sttxt.textContent=txt; }
+
+function ask(query){
+  if(streaming||!query.trim())return;
+  streaming=true;sendEl.disabled=true;
+  itin.classList.add("show");
+  setStatus("Boarding…",false);
+  printEl.innerHTML="";extraEl.innerHTML="";
+  if(typeof planoutEl!=="undefined"&&planoutEl){planoutEl.innerHTML="";planoutEl.style.display="none";}
+  let answer="";
+  authedFetch("/ask_stream",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({query,session_id:"ui",user_id:"ui"})})
+  .then(res=>{const reader=res.body.getReader(),dec=new TextDecoder();let buf="";
+    function pump(){return reader.read().then(({done,value})=>{
+      if(done){endStream();return;}
+      buf+=dec.decode(value,{stream:true});let parts=buf.split("\n\n");buf=parts.pop();
+      for(const p of parts){const line=p.split("\n").find(l=>l.startsWith("data:"));if(!line)continue;
+        let ev;try{ev=JSON.parse(line.slice(5).trim());}catch(e){continue;}handle(ev);}
+      return pump();});}
+    return pump();
+  }).catch(()=>{setStatus("Couldn't reach the planner — is the server running?",true);endStream();});
+
+  function handle(ev){
+    if(ev.type==="status"){ const l=STAGE_LABELS[ev.stage]||ev.stage; setStatus(l+"…",false); }
+    else if(ev.type==="token"){
+      if(!printEl.dataset.started){printEl.dataset.started="1";setStatus("Writing your itinerary",true);}
+      answer+=ev.text; printEl.innerHTML=fmt(answer)+'<span class="cursor"></span>';
+    }
+    else if(ev.type==="clarification"){
+      setStatus("One quick question",true);
+      printEl.innerHTML="";
+      const cq=ev.question||"Which destination are you asking about?";
+      extraEl.innerHTML=`<div class="clar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg><div><b>Clarify</b><div class="q">${cq}</div></div></div>`;
+    }
+    else if(ev.type==="done"){
+      setStatus("Itinerary ready",true);
+      answer=ev.answer||answer; printEl.innerHTML=fmt(answer);
+      if(ev.citations&&ev.citations.length)renderCites(ev.citations);
+      addListen(answer);
+    }
+    else if(ev.type==="error"){ setStatus("Something went wrong: "+(ev.error||"unknown"),true); }
+  }
+}
+function endStream(){streaming=false;sendEl.disabled=false;const c=printEl.querySelector(".cursor");if(c)c.remove();delete printEl.dataset.started;}
+function fmt(t){const e=t.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");return e.split(/\n\n+/).map(p=>`<p>${p.replace(/\n/g,"<br>")}</p>`).join("");}
+function renderCites(c){const rows=c.map(x=>`<div class="cite"><span class="n">[${x.n}]</span><span><span class="src">${x.city?x.city+" guide":(x.source||"source")}</span>${x.page?` &middot; p.${x.page}`:""}</span></div>`).join("");const wrap=document.createElement("div");wrap.className="cites";wrap.innerHTML=`<div class="h">Sources</div>${rows}`;extraEl.appendChild(wrap);}
+
+// ---- Voice: text-to-speech playback (on demand) ----
+let currentAudio=null;
+function addListen(text){
+  if(!text) return;
+  const btn=document.createElement("button");
+  btn.className="listen-btn";
+  btn.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07M19.07 4.93a10 10 0 0 1 0 14.14"/></svg><span>Listen</span>`;
+  let playing=false;
+  btn.onclick=()=>{
+    if(playing){ if(currentAudio){currentAudio.pause();currentAudio.currentTime=0;} playing=false; setListen(btn,false); return; }
+    setListen(btn,"loading");
+    if(currentAudio){currentAudio.pause();}
+    // Point the audio element straight at the streaming endpoint: the browser
+    // plays progressively as bytes arrive (starts in ~1s, not after the whole
+    // file). GET with the text in the query so <audio> can stream from a URL.
+    const spoken=(text||"").slice(0,1800);   // keep URL under length limits
+    currentAudio=new Audio("/voice/speak?text="+encodeURIComponent(spoken));
+    currentAudio.onplaying=()=>{playing=true;setListen(btn,true);};
+    currentAudio.onended=()=>{playing=false;setListen(btn,false);};
+    currentAudio.onerror=()=>{setListen(btn,false);};
+    currentAudio.play().catch(()=>setListen(btn,false));
+  };
+  extraEl.appendChild(btn);
+}
+function setListen(btn,state){
+  const label=btn.querySelector("span");
+  if(state==="loading"){label.textContent="Loading…";}
+  else if(state===true){label.textContent="Stop";btn.classList.add("playing");}
+  else {label.textContent="Listen";btn.classList.remove("playing");}
+}
+
+// ---- Voice: push-to-talk recording ----
+let mediaRecorder=null, chunks=[], recording=false;
+async function startRec(){
+  if(recording||streaming) return;
+  try{
+    const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+    mediaRecorder=new MediaRecorder(stream);
+    chunks=[];
+    mediaRecorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data);};
+    mediaRecorder.onstop=async()=>{
+      stream.getTracks().forEach(t=>t.stop());
+      micEl.classList.remove("recording");
+      const blob=new Blob(chunks,{type:mediaRecorder.mimeType||"audio/webm"});
+      // transcribe
+      itin.classList.add("show"); setStatus("Transcribing…",false);
+      const fd=new FormData(); fd.append("audio",blob,"speech.webm");
+      try{
+        const res=await fetch("/voice/transcribe",{method:"POST",body:fd});
+        const {text}=await res.json();
+        if(text && text.trim()){
+          qEl.value=text;              // fill the box; user reviews, then clicks Board
+          qEl.focus();
+          itin.classList.remove("show");   // hide the transcribing status
+        } else {
+          itin.classList.remove("show");
+          qEl.placeholder="Didn't catch that — try again";
+        }
+      }catch(e){ itin.classList.remove("show"); qEl.placeholder="Transcription failed — type instead"; }
+    };
+    mediaRecorder.start(); recording=true; micEl.classList.add("recording");
+  }catch(e){ setStatus("Mic access denied — check browser permissions",true); }
+}
+function stopRec(){ if(recording&&mediaRecorder){recording=false; mediaRecorder.stop();} }
+// tap to start, tap to stop
+micEl.onclick=()=>{ if(recording) stopRec(); else startRec(); };
+
+// ---- Mode: Ask (Q&A stream) vs Plan (constraint day-plan) ----
+let mode=(function(){try{return localStorage.getItem("suitcase_mode")||"ask";}catch(e){return "ask";}})();
+const planoutEl=$("#planout");
+const ASK_CHIPS=["Best neighborhoods in Lisbon?","Family-friendly hotels in Lisbon under $200","Is Lisbon good for wheelchair travel?","Cheapest non-stop flights to Barcelona"];
+const PLAN_CHIPS=["plan a 2 day Rome trip with a toddler and someone in a wheelchair","3 days in Tokyo, wheelchair user, vegetarian","2 day Amsterdam trip with a stroller and a senior","plan a 2 day Prague trip for a wheelchair user on a budget"];
+const chipsWrap=document.querySelector(".chips");
+
+function setMode(m){
+  mode=m;
+  try{localStorage.setItem("suitcase_mode",m);}catch(e){}
+  $("#mAsk").classList.toggle("on",m==="ask");
+  $("#mPlan").classList.toggle("on",m==="plan");
+  qEl.placeholder = m==="plan"
+    ? "e.g. plan a 2 day Rome trip with a toddler and someone in a wheelchair"
+    : "e.g. best neighborhoods in Lisbon";
+  const chips = m==="plan"?PLAN_CHIPS:ASK_CHIPS;
+  chipsWrap.innerHTML = chips.map(c=>`<button class="chip">${c}</button>`).join("");
+  chipsWrap.querySelectorAll(".chip").forEach(c=>c.onclick=()=>{qEl.value=c.textContent;go(c.textContent);});
+  // reset the panel between modes
+  itin.classList.remove("show"); printEl.innerHTML=""; planoutEl.innerHTML=""; planoutEl.style.display="none"; extraEl.innerHTML="";
+}
+$("#mAsk").onclick=()=>setMode("ask");
+$("#mPlan").onclick=()=>setMode("plan");
+
+// ---- Plan rendering (reuses the departures-board status + fade-in panel) ----
+const SLOTS=["morning","afternoon","evening"];
+function esc(s){return (s==null?"":String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function ppill(kind,label){const t=label==="UNKNOWN"?"not sure":label;return `<span class="ppill ${esc(label)}">${esc(kind)} ${esc(t)}</span>`;}
+
+// ---- editable plan state (drag-and-drop / swap operate on this) ----
+let planState=null;  // {destination, dl, chips, crit, days:[{day,blocks:{morning,afternoon,evening}}], skipped:[...], fill_note}
+
+function scoreOf(item){return (item&&item.overall&&item.overall.score)||0;}
+function dayFit(day){
+  const placed=SLOTS.map(s=>day.blocks[s]).filter(Boolean);
+  if(!placed.length) return 0;
+  return Math.round(placed.reduce((a,b)=>a+scoreOf(b),0)/placed.length);
+}
+function pillsFor(item){
+  const per=item.per_constraint||{};
+  return Object.keys(per).map(k=>ppill(k.replace(/_/g," "),per[k].label)).join("");
+}
+
+function renderState(){
+  const st=planState; if(!st) return;
+  let html=`<div class="plan-top"><div class="plan-dest">${esc(st.destination||"Trip")}<small>${esc(st.dl)} ${st.dl==1?"day":"days"}</small></div>`;
+  html+=`<div class="verdict${st.crit.needs_replan?" replan":""}">${st.crit.needs_replan?"needs replan":"plan holds"}</div></div>`;
+  // chips
+  const det=(st.chips.detected||[]).map(x=>`<span class="pchip det">${esc(x.replace(/_/g," "))}</span>`).join("");
+  const sug=(st.chips.suggested||[]).map(x=>`<span class="pchip sug" data-add="${esc(x)}">+ ${esc(x.replace(/_/g," "))}</span>`).join("");
+  let chipHtml="";
+  if(det) chipHtml+=`<div class="chiprow"><span class="chiplab">Understood</span><div class="chipset">${det}</div></div>`;
+  if(sug) chipHtml+=`<div class="chiprow"><span class="chiplab">Add a constraint</span><div class="chipset">${sug}</div></div>`;
+  html+=`<div class="pchips">${chipHtml}</div>`;
+  html+=`<div class="edithint">Drag any card to a different slot or day. Drag a “left out” spot up to swap it in.</div>`;
+  // days
+  st.days.forEach((d,di)=>{
+    const fit=dayFit(d);
+    let blocks="";
+    SLOTS.forEach(slot=>{
+      const b=d.blocks[slot];
+      if(b){
+        blocks+=`<div class="pblk" draggable="true" data-di="${di}" data-slot="${slot}" data-kind="placed">
+          <div class="slot">${slot}</div><div class="nm">${esc(b.name_hint)}</div>
+          <div class="ppills">${pillsFor(b)}</div></div>`;
+      } else {
+        blocks+=`<div class="pblk drop-empty" data-di="${di}" data-slot="${slot}">
+          <div class="slot">${slot}</div><div class="empty">— open —</div></div>`;
+      }
+    });
+    html+=`<div class="pday"><div class="pday-head"><span class="pday-num">Day ${d.day}</span>
+      <div class="fitbar"><span style="width:${fit}%"></span></div><span class="pfit">${fit}% fit</span></div>
+      <div class="pblocks">${blocks}</div></div>`;
+  });
+  if(st.fill_note){ html+=`<div class="fillnote">${esc(st.fill_note)}</div>`; }
+  // skipped (draggable to swap in)
+  if(st.skipped.length){
+    html+=`<div class="pskip"><div class="h">Popular spots I left out — and why</div>
+      <p class="sub">These are well-known, but they don't fit the constraints as given. Drag one up to add it anyway.</p>`;
+    st.skipped.forEach((s,si)=>{
+      const per=s.per_constraint||{};
+      let tag=(s.overall&&s.overall.label)||"TOUGH";
+      const hard=per.wheelchair||per.budget;
+      if(hard&&hard.label){ tag=hard.label; }
+      else { const vals=Object.values(per);
+        if(vals.length){ if(vals.some(v=>v.label==="FAIL"))tag="FAIL"; else if(vals.some(v=>v.label==="TOUGH"))tag="TOUGH"; else if(vals.some(v=>v.label==="UNKNOWN"))tag="UNKNOWN"; } }
+      const isUnknown=tag==="UNKNOWN"; const tagText=isUnknown?"NOT SURE":tag;
+      const star=s.is_famous?`<span class="star">must-see</span>`:"";
+      const orig=s.origin==="guide_flagged"?"flagged by guide":"rating-derived";
+      let why=esc(s.reason);
+      if(isUnknown){ why=`We don't have step-free details for this place in our guides yet — worth checking directly before you go.`; }
+      html+=`<div class="skrow${isUnknown?" unsure":""}" draggable="true" data-si="${si}" data-kind="skipped">
+        <div class="sktag ${esc(tag)}">${esc(tagText)}</div>
+        <div class="skbody"><div class="nm">${esc(s.name_hint)}${star}</div>
+        <div class="why">${why}</div><div class="orig">${isUnknown?"no data — verify":orig}</div></div></div>`;
+    });
+    html+=`</div>`;
+  }
+  const placedN=st.days.reduce((a,d)=>a+SLOTS.filter(s=>d.blocks[s]).length,0);
+  html+=`<div class="pfoot"><button class="pdf-btn" id="pdfBtn">Export PDF</button><div class="cnt">${placedN} placed · ${st.skipped.length} in “left out”</div></div>`;
+  planoutEl.innerHTML=html;
+  planoutEl.style.display="block";
+  wireChips();
+  wireDnD();
+  const pb=document.getElementById("pdfBtn"); if(pb) pb.onclick=exportPDF;
+}
+
+// ---- PDF export: render current planState into a print-only boarding pass ----
+function exportPDF(){
+  const st=planState; if(!st) return;
+  const host=document.getElementById("printhost");
+  let h=`<div class="pp-doc">
+    <div class="pp-stripe"></div>
+    <div class="pp-head">
+      <div class="pp-brand">SUITCASE<span>.</span></div>
+      <div class="pp-tag">BOARDING PASS · CONSTRAINT-FAITHFUL ITINERARY</div>
+    </div>
+    <div class="pp-route">
+      <div class="pp-dest">${esc(st.destination)}</div>
+      <div class="pp-days">${esc(st.dl)} ${st.dl==1?"DAY":"DAYS"}</div>
+    </div>
+    <div class="pp-chips">${(st.chips.detected||[]).map(x=>`<span>${esc(x.replace(/_/g," ").toUpperCase())}</span>`).join("")}</div>`;
+  st.days.forEach(d=>{
+    const fit=dayFit(d);
+    h+=`<div class="pp-day"><div class="pp-daynum">DAY ${d.day} · ${fit}% FIT</div><div class="pp-slots">`;
+    SLOTS.forEach(slot=>{
+      const b=d.blocks[slot];
+      h+=`<div class="pp-slot"><div class="pp-slotk">${slot.toUpperCase()}</div>`;
+      if(b){
+        const per=b.per_constraint||{};
+        const pl=Object.keys(per).map(k=>`${k.replace(/_/g," ")}: ${per[k].label==="UNKNOWN"?"not sure":per[k].label}`).join(" · ");
+        h+=`<div class="pp-nm">${esc(b.name_hint)}</div><div class="pp-pl">${esc(pl)}</div>`;
+      } else { h+=`<div class="pp-open">— open —</div>`; }
+      h+=`</div>`;
+    });
+    h+=`</div></div>`;
+  });
+  if(st.skipped.length){
+    h+=`<div class="pp-skip"><div class="pp-skh">LEFT OUT — AND WHY</div>`;
+    st.skipped.forEach(s=>{
+      const per=s.per_constraint||{}; let tag=(s.overall&&s.overall.label)||"TOUGH";
+      const hard=per.wheelchair||per.budget; if(hard&&hard.label)tag=hard.label;
+      const tg=tag==="UNKNOWN"?"NOT SURE":tag;
+      h+=`<div class="pp-skrow"><b>[${tg}] ${esc(s.name_hint)}${s.is_famous?" ★":""}</b><br>${esc(s.reason)}</div>`;
+    });
+    h+=`</div>`;
+  }
+  h+=`<div class="pp-foot">Generated by Suitcase · grounded · cited · constraint-faithful</div></div>`;
+  host.innerHTML=h;
+  window.print();
+}
+
+function wireChips(){
+  const PHRASE={toddler:"with a toddler",senior:"with a senior",stroller:"with a stroller",
+    budget:"on a budget",dietary:"vegetarian",pace:"at a relaxed pace",wheelchair:"with someone in a wheelchair"};
+  planoutEl.querySelectorAll(".pchip.sug").forEach(chip=>{
+    chip.onclick=()=>{
+      const add=chip.getAttribute("data-add");
+      const phrase=PHRASE[add]||("with "+add);
+      const base=(lastPlanQuery||qEl.value||"").trim();
+      const next=base+" "+phrase; qEl.value=next; planTrip(next);
+    };
+  });
+}
+
+// ---- drag and drop ----
+let dragSrc=null;  // {kind:'placed'|'skipped', di, slot, si}
+function wireDnD(){
+  planoutEl.querySelectorAll('[draggable="true"]').forEach(el=>{
+    el.addEventListener("dragstart",e=>{
+      dragSrc={kind:el.getAttribute("data-kind"),
+        di:el.getAttribute("data-di")!=null?+el.getAttribute("data-di"):null,
+        slot:el.getAttribute("data-slot"),
+        si:el.getAttribute("data-si")!=null?+el.getAttribute("data-si"):null};
+      el.classList.add("dragging");
+      e.dataTransfer.effectAllowed="move";
+    });
+    el.addEventListener("dragend",()=>{el.classList.remove("dragging");
+      planoutEl.querySelectorAll(".drop-hover").forEach(x=>x.classList.remove("drop-hover"));});
+  });
+  // slots are drop targets
+  planoutEl.querySelectorAll(".pblk").forEach(slotEl=>{
+    slotEl.addEventListener("dragover",e=>{e.preventDefault();slotEl.classList.add("drop-hover");e.dataTransfer.dropEffect="move";});
+    slotEl.addEventListener("dragleave",()=>slotEl.classList.remove("drop-hover"));
+    slotEl.addEventListener("drop",e=>{
+      e.preventDefault(); slotEl.classList.remove("drop-hover");
+      const di=+slotEl.getAttribute("data-di"), slot=slotEl.getAttribute("data-slot");
+      applyDrop(di,slot);
+    });
+  });
+}
+
+function applyDrop(destDi,destSlot){
+  if(!dragSrc) return;
+  const st=planState;
+  const destItem=st.days[destDi].blocks[destSlot];
+  if(dragSrc.kind==="placed"){
+    const srcItem=st.days[dragSrc.di].blocks[dragSrc.slot];
+    if(!srcItem) return;
+    // swap the two slot contents (destItem may be null = move)
+    st.days[destDi].blocks[destSlot]=srcItem;
+    st.days[dragSrc.di].blocks[dragSrc.slot]=destItem||null;
+  } else if(dragSrc.kind==="skipped"){
+    const srcItem=st.skipped[dragSrc.si];
+    if(!srcItem) return;
+    // pull from skipped into the slot; if slot was occupied, bump that back to skipped
+    st.skipped.splice(dragSrc.si,1);
+    st.days[destDi].blocks[destSlot]=srcItem;
+    if(destItem){ st.skipped.unshift(destItem); }
+  }
+  dragSrc=null;
+  renderState();
+}
+
+function renderPlan(data){
+  const it=data.itinerary||{},c=data.contract||{},chips=data.chips||{},crit=it.critique||{};
+  // build editable state from the server response
+  planState={
+    destination:c.destination||"Trip",
+    dl:(c.trip_length_days||(it.days||[]).length||""),
+    chips:chips, crit:crit, fill_note:it.fill_note,
+    days:(it.days||[]).map(d=>({day:d.day, blocks:{
+      morning:(d.blocks||{}).morning||null,
+      afternoon:(d.blocks||{}).afternoon||null,
+      evening:(d.blocks||{}).evening||null}})),
+    skipped:(it.skipped||[]).slice(),
+  };
+  renderState();
+}
+let lastPlanQuery="";
+
+let planning=false;
+function planTrip(query){
+  if(planning||!query.trim())return;
+  lastPlanQuery=query.trim();
+  planning=true;sendEl.disabled=true;
+  itin.classList.add("show");
+  printEl.innerHTML="";planoutEl.innerHTML="";planoutEl.style.display="none";extraEl.innerHTML="";
+  setStatus("Extracting constraints · retrieving · rating · assembling",false);
+  authedFetch("/plan",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({query,user_id:"ui"})})
+  .then(r=>{if(!r.ok)throw new Error("Server "+r.status);return r.json();})
+  .then(data=>{ setStatus("Itinerary ready",true); renderPlan(data); })
+  .catch(e=>{ setStatus("Couldn't plan this trip: "+e.message,true); })
+  .finally(()=>{ planning=false; sendEl.disabled=false; });
+}
+
+// ---- mode-aware dispatch ----
+function go(text){ if(mode==="plan") planTrip(text); else ask(text); }
+
+sendEl.onclick=()=>go(qEl.value);
+qEl.addEventListener("keydown",e=>{if(e.key==="Enter")go(qEl.value);});
+// initialize chips for the restored mode with the new handler
+setMode(mode);
+
+// ---- init auth: load config, wire the login button ----
+loadAuthConfig();
+(function(){
+  const btn=document.getElementById("loginBtn");
+  const st=document.getElementById("loginStatus");
+  const em=document.getElementById("loginEmail");
+  const pw=document.getElementById("loginPass");
+  if(!btn) return;
+  async function doLogin(){
+    st.textContent="Signing in…";
+    try{
+      await cognitoLogin(em.value.trim(), pw.value);
+      st.textContent="✓ Signed in as "+em.value.trim();
+      em.style.display="none"; pw.style.display="none"; btn.style.display="none";
+    }catch(e){ st.textContent="Sign-in failed — check email/password"; }
+  }
+  btn.onclick=doLogin;
+  pw.addEventListener("keydown",e=>{ if(e.key==="Enter") doLogin(); });
+})();
+</script>
+</body>
+</html>

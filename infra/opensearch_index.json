@@ -1,0 +1,19 @@
+{
+  "settings": { "index": { "knn": true } },
+  "mappings": {
+    "properties": {
+      "embedding": {
+        "type": "knn_vector",
+        "dimension": 1024,
+        "method": { "name": "hnsw", "engine": "lucene", "space_type": "cosinesimil" }
+      },
+      "text":     { "type": "text" },
+      "study_id": { "type": "keyword" },
+      "compound": { "type": "keyword" },
+      "species":  { "type": "keyword" },
+      "route":    { "type": "keyword" },
+      "section":  { "type": "keyword" },
+      "page":     { "type": "integer" }
+    }
+  }
+}

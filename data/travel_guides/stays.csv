@@ -1,0 +1,61 @@
+stay_id,city,name,type,price_per_night_usd,rating,neighborhood,walkable_score,family_friendly,wheelchair_accessible,has_kitchen,breakfast_included,max_occupancy
+ST0001,Lisbon,Lisbon Hotel 1,hotel,148,4.6,Old Lisbon,9,no,no,no,no,5
+ST0002,Lisbon,Lisbon Hotel 2,hotel,220,4.3,Lisbon Center,9,no,no,no,yes,3
+ST0003,Lisbon,Lisbon Boutique Hotel 3,boutique hotel,306,4.5,Old Lisbon,7,no,yes,no,no,4
+ST0004,Lisbon,Lisbon Hotel 4,hotel,165,4.6,Lisbon Center,5,yes,no,no,yes,4
+ST0005,Lisbon,Lisbon Hotel 5,hotel,193,3.9,Old Lisbon,8,yes,yes,no,yes,5
+ST0006,Lisbon,Lisbon Guesthouse 6,guesthouse,70,4.9,Lisbon Center,7,yes,no,yes,yes,5
+ST0007,Tokyo,Tokyo Guesthouse 1,guesthouse,79,4.6,Old Tokyo,6,no,no,no,no,3
+ST0008,Tokyo,Tokyo Hotel 2,hotel,193,4.1,Tokyo Center,10,yes,yes,no,no,3
+ST0009,Tokyo,Tokyo Hostel 3,hostel,109,4.8,Old Tokyo,10,no,no,yes,no,4
+ST0010,Tokyo,Tokyo Boutique Hotel 4,boutique hotel,283,4.6,Tokyo Center,10,no,no,no,no,4
+ST0011,Tokyo,Tokyo Guesthouse 5,guesthouse,83,4.6,Old Tokyo,7,yes,no,yes,no,3
+ST0012,Tokyo,Tokyo Apartment 6,apartment,129,3.9,Tokyo Center,10,yes,yes,yes,no,5
+ST0013,Barcelona,Barcelona Apartment 1,apartment,145,4.8,Old Barcelona,9,yes,no,no,no,7
+ST0014,Barcelona,Barcelona Guesthouse 2,guesthouse,88,4.6,Barcelona Center,9,yes,no,yes,no,3
+ST0015,Barcelona,Barcelona Apartment 3,apartment,106,4.6,Old Barcelona,8,yes,no,no,no,7
+ST0016,Barcelona,Barcelona Guesthouse 4,guesthouse,63,4.2,Barcelona Center,5,yes,no,yes,no,5
+ST0017,Barcelona,Barcelona Hotel 5,hotel,232,4.8,Old Barcelona,8,yes,yes,no,no,4
+ST0018,Barcelona,Barcelona Boutique Hotel 6,boutique hotel,273,3.8,Barcelona Center,6,no,yes,no,yes,4
+ST0019,Bangkok,Bangkok Guesthouse 1,guesthouse,68,4.8,Old Bangkok,7,no,no,yes,yes,3
+ST0020,Bangkok,Bangkok Boutique Hotel 2,boutique hotel,284,4.8,Bangkok Center,7,no,yes,no,yes,4
+ST0021,Bangkok,Bangkok Apartment 3,apartment,97,3.9,Old Bangkok,5,yes,yes,yes,no,5
+ST0022,Bangkok,Bangkok Boutique Hotel 4,boutique hotel,287,4.8,Bangkok Center,9,no,no,no,yes,2
+ST0023,Bangkok,Bangkok Boutique Hotel 5,boutique hotel,231,4.5,Old Bangkok,9,no,yes,no,no,4
+ST0024,Bangkok,Bangkok Apartment 6,apartment,122,4.8,Bangkok Center,10,yes,yes,yes,no,6
+ST0025,Reykjavik,Reykjavik Hostel 1,hostel,76,4.8,Old Reykjavik,6,no,no,yes,no,2
+ST0026,Reykjavik,Reykjavik Hotel 2,hotel,188,3.8,Reykjavik Center,10,yes,yes,no,no,5
+ST0027,Reykjavik,Reykjavik Hotel 3,hotel,174,3.9,Old Reykjavik,10,no,no,no,yes,4
+ST0028,Reykjavik,Reykjavik Apartment 4,apartment,122,4.4,Reykjavik Center,8,yes,yes,yes,no,5
+ST0029,Reykjavik,Reykjavik Apartment 5,apartment,119,3.9,Old Reykjavik,5,yes,yes,yes,no,7
+ST0030,Reykjavik,Reykjavik Hotel 6,hotel,152,4.2,Reykjavik Center,9,yes,yes,no,no,3
+ST0031,Mexico City,Mexico City Apartment 1,apartment,112,4.3,Old Mexico City,9,no,no,yes,no,6
+ST0032,Mexico City,Mexico City Hotel 2,hotel,151,4.5,Mexico City Center,6,yes,no,no,no,3
+ST0033,Mexico City,Mexico City Apartment 3,apartment,157,4.3,Old Mexico City,8,yes,yes,no,no,5
+ST0034,Mexico City,Mexico City Hostel 4,hostel,78,4.1,Mexico City Center,9,no,no,yes,no,4
+ST0035,Mexico City,Mexico City Apartment 5,apartment,114,4.0,Old Mexico City,10,no,no,yes,no,5
+ST0036,Mexico City,Mexico City Hostel 6,hostel,27,3.9,Mexico City Center,6,no,no,yes,no,4
+ST0037,Cape Town,Cape Town Hotel 1,hotel,210,3.9,Old Cape Town,8,no,yes,no,yes,3
+ST0038,Cape Town,Cape Town Hotel 2,hotel,217,4.1,Cape Town Center,9,yes,yes,no,yes,5
+ST0039,Cape Town,Cape Town Guesthouse 3,guesthouse,95,4.8,Old Cape Town,6,no,no,yes,no,4
+ST0040,Cape Town,Cape Town Hostel 4,hostel,78,4.1,Cape Town Center,5,no,no,yes,no,2
+ST0041,Cape Town,Cape Town Apartment 5,apartment,174,4.9,Old Cape Town,6,yes,no,no,no,6
+ST0042,Cape Town,Cape Town Hostel 6,hostel,28,4.8,Cape Town Center,8,no,no,yes,no,2
+ST0043,Queenstown,Queenstown Guesthouse 1,guesthouse,145,4.1,Old Queenstown,9,yes,no,yes,yes,5
+ST0044,Queenstown,Queenstown Hostel 2,hostel,104,3.9,Queenstown Center,5,no,no,yes,no,3
+ST0045,Queenstown,Queenstown Hotel 3,hotel,240,4.4,Old Queenstown,10,no,yes,no,yes,3
+ST0046,Queenstown,Queenstown Hostel 4,hostel,84,4.3,Queenstown Center,5,no,no,yes,no,2
+ST0047,Queenstown,Queenstown Apartment 5,apartment,130,3.8,Old Queenstown,10,yes,no,yes,no,5
+ST0048,Queenstown,Queenstown Apartment 6,apartment,165,4.6,Queenstown Center,6,yes,no,yes,no,7
+ST0049,Marrakech,Marrakech Guesthouse 1,guesthouse,59,4.7,Old Marrakech,7,yes,no,no,no,4
+ST0050,Marrakech,Marrakech Hotel 2,hotel,190,4.0,Marrakech Center,9,no,no,no,yes,4
+ST0051,Marrakech,Marrakech Boutique Hotel 3,boutique hotel,245,4.8,Old Marrakech,5,no,yes,no,yes,3
+ST0052,Marrakech,Marrakech Boutique Hotel 4,boutique hotel,309,4.8,Marrakech Center,10,no,yes,no,yes,4
+ST0053,Marrakech,Marrakech Boutique Hotel 5,boutique hotel,249,4.0,Old Marrakech,8,no,yes,no,no,2
+ST0054,Marrakech,Marrakech Boutique Hotel 6,boutique hotel,240,4.7,Marrakech Center,6,no,yes,no,no,2
+ST0055,Vancouver,Vancouver Hotel 1,hotel,229,4.0,Old Vancouver,7,yes,yes,no,yes,4
+ST0056,Vancouver,Vancouver Guesthouse 2,guesthouse,106,4.5,Vancouver Center,6,yes,no,yes,no,4
+ST0057,Vancouver,Vancouver Guesthouse 3,guesthouse,88,3.8,Old Vancouver,9,yes,no,yes,yes,4
+ST0058,Vancouver,Vancouver Guesthouse 4,guesthouse,69,4.2,Vancouver Center,9,yes,no,yes,yes,3
+ST0059,Vancouver,Vancouver Guesthouse 5,guesthouse,142,4.6,Old Vancouver,10,yes,no,yes,no,3
+ST0060,Vancouver,Vancouver Hostel 6,hostel,99,4.1,Vancouver Center,7,no,no,yes,no,4

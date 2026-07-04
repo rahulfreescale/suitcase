@@ -1,0 +1,11 @@
+city,place,is_famous,wheelchair,toddler,senior,confidence,note,source
+Meerut,Meerut Cantonment Railway Station,True,GOOD,GOOD,GOOD,LOW,"Modern station with ramps, lifts, and accessible platforms for most areas.",llm knowledge
+Meerut,Suraj Kund Lake,True,TOUGH,TOUGH,TOUGH,LOW,Natural lake with uneven terrain and limited paved pathways around the perimeter.,llm knowledge
+Meerut,Meerut Museum,True,GOOD,GOOD,GOOD,LOW,Ground floor exhibits are accessible with ramps; upper floors may require assistance.,llm knowledge
+Meerut,St. John's Church,True,TOUGH,TOUGH,TOUGH,LOW,Historic church with steps at entrance and uneven interior flooring.,llm knowledge
+Meerut,Jama Masjid,True,TOUGH,TOUGH,TOUGH,LOW,Traditional mosque with multiple steps and narrow passages in the old city area.,llm knowledge
+Meerut,Meerut Golf Club,True,UNKNOWN,UNKNOWN,UNKNOWN,LOW,Private club with limited public information available on accessibility features.,llm knowledge
+Meerut,Iqbal Park,True,GOOD,GOOD,GOOD,LOW,Well-maintained public park with paved pathways and accessible seating areas.,llm knowledge
+Meerut,Meerut Jail Museum,True,TOUGH,TOUGH,TOUGH,LOW,"Historic jail with narrow corridors, stairs, and uneven surfaces throughout.",llm knowledge
+Meerut,Hastinapur Wildlife Sanctuary,True,FAIL,FAIL,FAIL,LOW,"Natural sanctuary with rough terrain, no paved paths, and limited facilities.",llm knowledge
+Meerut,Meerut Clock Tower,True,FAIL,FAIL,FAIL,LOW,Historic monument with steep stairs and no elevator access to upper levels.,llm knowledge

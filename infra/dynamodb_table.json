@@ -1,0 +1,12 @@
+{
+  "TableName": "suitcase-app-state",
+  "BillingMode": "PAY_PER_REQUEST",
+  "KeySchema": [
+    { "AttributeName": "thread_id", "KeyType": "HASH" },
+    { "AttributeName": "step_id",   "KeyType": "RANGE" }
+  ],
+  "AttributeDefinitions": [
+    { "AttributeName": "thread_id", "AttributeType": "S" },
+    { "AttributeName": "step_id",   "AttributeType": "S" }
+  ]
+}

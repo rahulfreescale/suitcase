@@ -1,0 +1,73 @@
+# Local mirror of the AWS-faithful stack.
+#   core profile          -> OpenSearch, DynamoDB-Local, Postgres, MinIO (S3)
+#   observability profile -> Langfuse + its Postgres
+#
+#   docker compose --profile core up -d
+#   docker compose --profile core --profile observability up -d
+
+services:
+  opensearch:
+    image: opensearchproject/opensearch:2.17.1
+    profiles: ["core"]
+    environment:
+      - discovery.type=single-node
+      - bootstrap.memory_lock=false                 # memlock fails on Docker Desktop
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"     # light heap; plenty for the demo
+      - DISABLE_SECURITY_PLUGIN=true                # no TLS/auth for local dev
+      - DISABLE_INSTALL_DEMO_CONFIG=true            # skip the demo cert setup that fails on boot
+    ports: ["9200:9200"]
+    volumes: ["./.opensearch_data:/usr/share/opensearch/data"]
+
+  dynamodb-local:
+    image: amazon/dynamodb-local:2.5.2
+    profiles: ["core"]
+    command: ["-jar", "DynamoDBLocal.jar", "-sharedDb", "-inMemory"]
+    ports: ["8000:8000"]
+
+  postgres:
+    image: postgres:16
+    profiles: ["core"]
+    environment:
+      POSTGRES_USER: suitcase
+      POSTGRES_PASSWORD: suitcase
+      POSTGRES_DB: suitcase
+    ports: ["5432:5432"]
+    volumes: ["./.pg_data:/var/lib/postgresql/data"]
+
+  redis:                                       # session + long-term memory store
+    image: redis:7-alpine
+    profiles: ["core"]
+    ports: ["6379:6379"]
+    volumes: ["./.redis_data:/data"]
+    command: redis-server --appendonly yes      # persist to disk so memory survives restarts
+
+  minio:                                       # S3-compatible for the data lake
+    image: minio/minio:latest
+    profiles: ["core"]
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports: ["9000:9000", "9001:9001"]
+    volumes: ["./.minio_data:/data"]
+
+  langfuse-db:
+    image: postgres:16
+    profiles: ["observability"]
+    environment:
+      POSTGRES_USER: langfuse
+      POSTGRES_PASSWORD: langfuse
+      POSTGRES_DB: langfuse
+    volumes: ["./.langfuse_pg:/var/lib/postgresql/data"]
+
+  langfuse:
+    image: langfuse/langfuse:2
+    profiles: ["observability"]
+    depends_on: ["langfuse-db"]
+    environment:
+      DATABASE_URL: postgresql://langfuse:langfuse@langfuse-db:5432/langfuse
+      NEXTAUTH_SECRET: dev-secret-change-me
+      SALT: dev-salt-change-me
+      NEXTAUTH_URL: http://localhost:3000
+      TELEMETRY_ENABLED: "false"
+    ports: ["3000:3000"]
