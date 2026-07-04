@@ -109,14 +109,14 @@ The choices an interviewer tends to probe, and the honest reasoning behind each.
 
 ---
 
-## Limitations & what's next
+## Where this goes next
 
-Honest about what this is: a **portfolio-grade prototype**, not a product.
+The interesting problems are ahead of the current build, and each maps to a concrete next phase:
 
-- **The data is the moat, and it's thin.** Accessibility ratings are hand-researched for 26 cities from firsthand wheelchair-traveler accounts and official venue pages. Out-of-corpus cities fall back to guide-derived, then model-knowledge ratings (flagged, LOW confidence). The real next step is a **correction/feedback loop** — users correcting ratings, compounding into trustworthy data. That flywheel is the actual product hypothesis.
-- **Auth is tested, not production-hardened.** Login works (Cognito -> token -> verified in-app, confirmed via CLI and an in-app login). The full hosted-UI browser flow over HTTPS (ACM cert + domain) is the next step.
-- **Single-tenant.** Serving real users needs data isolation at the store layer (user-partitioned DynamoDB, Postgres row-level security, namespaced cache) — designed, not yet built.
-- **Freshness.** Access details change; production would need `last_verified` timestamps and a re-check cadence.
+- **A data feedback loop.** Accessibility ratings are hand-researched for 26 cities from firsthand wheelchair-traveler accounts and official venue pages; out-of-corpus cities fall back to guide-derived, then model-knowledge ratings (flagged, LOW confidence). The highest-leverage next step is a correction loop — travelers correcting ratings, which writes back to the bank's confidence and compounds into higher-trust data over time. This flywheel, not the code, is where a real product's moat would form.
+- **Browser auth over HTTPS.** Login works today (Cognito issues the token, the app verifies it — confirmed via CLI and an in-app login). The next step is the full hosted-UI browser flow over HTTPS, which adds an ACM certificate and a domain.
+- **Multi-tenancy.** Moving from single- to multi-user means enforcing data isolation at the store layer — user-partitioned DynamoDB, Postgres row-level security, and a per-user namespaced cache — so isolation is structural, not a filter the app has to remember.
+- **Freshness.** Access details change (a lift breaks, a ramp is added), so a production version would attach `last_verified` timestamps and a re-check cadence to keep the bank trustworthy.
 
 ---
 
