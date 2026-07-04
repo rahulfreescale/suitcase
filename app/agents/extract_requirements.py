@@ -36,7 +36,16 @@ _PROMPT = """You extract a structured TRIP REQUIREMENTS CONTRACT from a user's
 travel-planning request. Return ONLY JSON. Do not plan the trip.
 
 Extract these fields:
-- destination: the city, exactly as a proper name (e.g. "Prague"), or null if none stated.
+- destination: the city as its proper name (e.g. "Prague"), or null if none stated.
+  Resolve to the real city name when the user uses:
+    * a well-known nickname or description — "the Eternal City" -> "Rome",
+      "the Big Apple" -> "New York", "City of Light" -> "Paris",
+      "Land of the Rising Sun's capital" -> "Tokyo";
+    * an obvious misspelling or speech-to-text slip — "room" -> "Rome",
+      "tokoyo" -> "Tokyo", "barcalona" -> "Barcelona".
+  Only resolve when you are confident which real city is meant; if it's genuinely
+  ambiguous or not a place, return the user's word as-is (a later step will handle it).
+  Return the city's common English proper name, not the nickname.
 - trip_length_days: integer number of days if stated, else null.
 - travelers: list of objects, each {{"type": <"adult"|"toddler"|"child"|"senior">,
   "mobility": <"wheelchair"|"stroller"|null>}}. Infer sensibly:

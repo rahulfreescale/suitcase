@@ -27,6 +27,35 @@ from app.agents.assemble import assemble_itinerary
 from app.agents.decompose import decompose_all
 
 
+def _corpus_cities() -> list[str]:
+    """Cities we ship curated guides for — used ONLY for 'did you mean?' hints,
+    NOT as an allow-list (new cities still self-warm via the lazy bank)."""
+    import os
+    from app.config import get_settings
+    try:
+        return [f[:-3].replace("_", " ")
+                for f in os.listdir(get_settings().travel_guides_dir)
+                if f.endswith(".md")]
+    except Exception:
+        return []
+
+
+def _closest_city(dest: str, cities: list[str]) -> str | None:
+    """Fuzzy 'did you mean?' — catches typos like room->Rome. Only used to
+    SUGGEST when a plan came back empty; never to reject a destination."""
+    import difflib
+    if not dest:
+        return None
+    matches = difflib.get_close_matches(dest.lower(),
+                                        [c.lower() for c in cities], n=1, cutoff=0.7)
+    if not matches:
+        return None
+    for c in cities:
+        if c.lower() == matches[0]:
+            return c
+    return None
+
+
 def _norm_name(s: str) -> str:
     """Loose normalization for deduping place names across bank + retrieval."""
     import re, unicodedata
@@ -56,12 +85,20 @@ def _retrieve_activities(contract: dict, extra_queries: list[str] | None = None)
         queries += extra_queries
 
     seen, activities = set(), []
+    _want = _norm_name(city)
     for q in queries:
         res = run_rag(q)
         for c in res.get("citations", []):
             quote = (c.get("quote") or "").strip()
             key = quote[:80]
             if not quote or key in seen:
+                continue
+            # CITY GUARD: RAG returns nearest-neighbour chunks regardless of city,
+            # so an unknown/fake destination pulls in chunks from OTHER cities.
+            # Only keep chunks actually tagged with the requested city; if the
+            # chunk has a city and it doesn't match, drop it (don't relabel it).
+            chunk_city = _norm_name(c.get("city") or "")
+            if chunk_city and _want and chunk_city != _want:
                 continue
             seen.add(key)
             activities.append({
@@ -227,7 +264,11 @@ def _bank_rows_from_llm_knowledge(city: str, user_id) -> list:
     generation - and softens rather than hard-blocks until replaced.
     """
     _KNOWLEDGE_PROMPT = (
-        "You are seeding an accessibility guide for {city}. List up to 10 of the "
+        "You are seeding an accessibility guide for {city}. "
+        "FIRST decide: is \"{city}\" a real, identifiable city or place you know? "
+        "If it is NOT a real place you recognize (a made-up or unrecognizable name), "
+        "return exactly {{\"places\":[],\"unknown_place\":true}} and nothing else. "
+        "Otherwise, list up to 10 of the "
         "most famous must-see attractions there. For each, rate its accessibility "
         "from real-world knowledge (ramps, lifts, step-free entry, stairs, terrain). "
         "If you are genuinely unsure about a dimension for a place, use UNKNOWN for "
@@ -368,6 +409,32 @@ def plan_trip(request: str, user_id: str | None = None) -> dict:
     # Phase 3: assemble into day plan + skipped + critique
     itinerary = assemble_itinerary(rated, contract)
 
+    # Empty-plan guard: if retrieval AND the lazy bank both found nothing real for
+    # this destination, the plan comes back with 0 placed and 0 skipped. That's
+    # the signal the city couldn't be sourced (a typo like "room", or a place we
+    # genuinely have no data for) - NOT a normal result. Offer a "did you mean?"
+    # hint if the destination is close to a corpus city. This runs AFTER the lazy
+    # bank has had its chance, so real new cities that self-warm never reach here.
+    empty_reason = None
+    empty_suggestions = []
+    days = (itinerary or {}).get("days", [])
+    placed = sum(1 for d in days for s in ("morning", "afternoon", "evening") if d.get("blocks", {}).get(s))
+    skipped_n = len((itinerary or {}).get("skipped", []))
+    if placed == 0 and skipped_n == 0:
+        dest = contract.get("destination") or "that destination"
+        corpus = _corpus_cities()
+        suggestion = _closest_city(dest, corpus)
+        if suggestion and suggestion.lower() != dest.lower():
+            empty_reason = (f"I couldn't find travel data for \u201c{dest}\u201d. "
+                            f"Did you mean {suggestion}?")
+        else:
+            empty_reason = (f"I couldn't build a plan for \u201c{dest}\u201d \u2014 I don't have "
+                            f"enough grounded travel data for it yet. Could you try a "
+                            f"specific city, or tell me more about where you mean?")
+        # always offer a concrete next step: a few cities we DO cover well
+        import random
+        empty_suggestions = random.sample(corpus, min(6, len(corpus))) if corpus else []
+
     result = {
         "contract": contract,
         "chips": chips,
@@ -375,11 +442,15 @@ def plan_trip(request: str, user_id: str | None = None) -> dict:
         "clarification_question": None,
         "activities_rated": rated,
         "itinerary": itinerary,
+        "empty_reason": empty_reason,
+        "empty_suggestions": empty_suggestions,
     }
     # cache the finished plan so a repeat/near-identical request is instant
-    try:
-        from app.stores.cache import store as _cache_store
-        _cache_store("plan::" + request, result)
-    except Exception:
-        pass
+    # (skip caching an empty/failed plan so a fixed corpus later can succeed)
+    if not empty_reason:
+        try:
+            from app.stores.cache import store as _cache_store
+            _cache_store("plan::" + request, result)
+        except Exception:
+            pass
     return result

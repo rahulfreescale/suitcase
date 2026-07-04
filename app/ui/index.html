@@ -128,13 +128,30 @@
   .fitbar{flex:1;max-width:170px;height:5px;background:#EEEBE3;border-radius:4px;overflow:hidden}
   .fitbar>span{display:block;height:100%;background:var(--go)}
   .pfit{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--ink2)}
-  .pblocks{display:grid;grid-template-columns:repeat(3,1fr);gap:11px}
-  .pblk{border:1px solid var(--line);border-radius:10px;padding:12px 13px;background:#FCFBF8;min-height:80px}
-  .pblk .slot{font-family:'JetBrains Mono',monospace;font-size:8.5px;letter-spacing:.11em;text-transform:uppercase;color:#A7ADB5;margin-bottom:6px}
-  .pblk .nm{font-family:'Archivo',sans-serif;font-weight:700;font-size:14px;color:var(--navy);line-height:1.3}
+  /* timeline-spine layout: vertical, dot + connecting line down the left */
+  .pblocks{position:relative;padding-left:26px}
+  .pblk{position:relative;border:1px solid var(--line);border-radius:11px;padding:13px 14px 12px;
+    background:linear-gradient(180deg,#FFFFFF,#FCFBF8);margin-bottom:10px;
+    box-shadow:0 1px 2px rgba(20,28,38,.04);transition:transform .16s cubic-bezier(.2,.7,.3,1),box-shadow .16s,border-color .16s}
+  /* the dot on the spine */
+  .pblk::after{content:"";position:absolute;left:-26px;top:15px;width:10px;height:10px;border-radius:50%;
+    background:var(--go);border:2px solid var(--card);box-shadow:0 0 0 1px var(--go)}
+  .pblk.is-tough::after{background:var(--amber);box-shadow:0 0 0 1px var(--amber)}
+  .pblk.is-fail::after{background:var(--stamp);box-shadow:0 0 0 1px var(--stamp)}
+  .pblk.drop-empty::after{background:#cfc9b8;box-shadow:0 0 0 1px #cfc9b8}
+  /* the connecting line between dots */
+  .pblk::before{content:"";position:absolute;left:-21.5px;top:25px;height:calc(100% + 10px);width:1px;background:#d8d3c5;z-index:0}
+  .pblk:last-child::before{display:none}
+  .pblk .slot{font-family:'JetBrains Mono',monospace;font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;color:#A7ADB5;margin-bottom:6px;padding-right:22px}
+  .pblk .nm{font-family:'Archivo',sans-serif;font-weight:700;font-size:15px;color:var(--navy);line-height:1.25;padding-right:20px}
   .pblk .empty{color:#B8BDC4;font-size:13px;font-style:italic}
+  /* grip handle — signals draggable */
+  .pblk[draggable="true"]::after,.pblk[draggable="true"]{}
+  .pblk[draggable="true"] .grip{position:absolute;top:13px;right:12px;display:grid;grid-template-columns:repeat(2,1fr);gap:3px;opacity:.55;transition:opacity .16s}
+  .pblk[draggable="true"]:hover .grip{opacity:1}
+  .pblk .grip i{width:3.5px;height:3.5px;border-radius:50%;background:#b3ad9d}
   .ppills{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px}
-  .ppill{font-family:'JetBrains Mono',monospace;font-size:8.5px;letter-spacing:.02em;border-radius:5px;padding:3px 6px}
+  .ppill{font-family:'JetBrains Mono',monospace;font-size:8.5px;letter-spacing:.03em;border-radius:5px;padding:3px 7px;font-weight:600}
   .ppill.EXCELLENT,.ppill.GOOD{background:#E4F1EC;color:var(--go)}
   .ppill.TOUGH{background:#F6ECD6;color:#B8862B}
   .ppill.FAIL{background:#F6DDD9;color:#C0392B}
@@ -143,21 +160,38 @@
   .skrow.unsure .skbody .why{font-style:italic;color:#8A9099}
   .fillnote{margin:6px 0 2px;padding:12px 15px;background:#FBF3E8;border:1px solid #F0DFC2;
     border-radius:10px;font-size:13px;line-height:1.55;color:#8A6A3B}
-  .edithint{font-size:12px;color:#9AA1AB;margin:0 0 14px;font-style:italic}
+  .edithint{display:flex;align-items:center;gap:8px;font-size:12.5px;color:#8A9099;margin:0 0 16px}
+  .planempty{text-align:center;padding:44px 24px}
+  .planempty-ic{font-size:34px;margin-bottom:12px}
+  .planempty-msg{font-family:'Archivo',sans-serif;font-weight:700;font-size:17px;color:var(--navy);line-height:1.35;max-width:420px;margin:0 auto}
+  .planempty-sub{font-size:13px;color:#8A9099;margin-top:8px}
+  .planempty-chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:16px;max-width:460px;margin-left:auto;margin-right:auto}
+  .planempty-chip{font-family:'Archivo',sans-serif;font-size:13px;font-weight:600;color:var(--navy);background:#fff;border:1px solid var(--line);border-radius:20px;padding:8px 16px;cursor:pointer;transition:.14s}
+  .planempty-chip:hover{background:var(--navy);color:#fff;border-color:var(--navy);transform:translateY(-1px)}
+  .edithint::before{content:"⠿";font-size:14px;color:#B8BDC4;letter-spacing:-1px}
   .pblk[draggable="true"]{cursor:grab}
+  .pblk[draggable="true"]:hover{transform:translateX(3px);box-shadow:0 6px 16px rgba(20,28,38,.10);border-color:#CFD4DC}
   .pblk[draggable="true"]:active{cursor:grabbing}
-  .pblk.dragging,.skrow.dragging{opacity:.4}
-  .pblk.drop-hover{border-color:var(--navy);border-style:solid;background:#EEF1F6;box-shadow:0 0 0 2px rgba(27,42,74,.12)}
+  .pblk.dragging,.skrow.dragging{opacity:.35}
+  .pblk.drop-hover{border-color:var(--navy);border-style:dashed;background:#EEF1F6;
+    box-shadow:0 0 0 3px rgba(27,42,74,.14)}
   .skrow[draggable="true"]{cursor:grab}
-  .skrow.dragging{opacity:.4}
+  .skrow[draggable="true"]:hover{background:#FBFAF7}
+  .skrow.dragging{opacity:.35}
   .pdf-btn{border:1.5px solid var(--navy);background:#fff;color:var(--navy);font-family:'Archivo',sans-serif;
     font-weight:700;font-size:12px;letter-spacing:.03em;text-transform:uppercase;padding:9px 16px;
     border-radius:8px;cursor:pointer;transition:all .13s}
   .pdf-btn:hover{background:var(--navy);color:#fff}
-  .pskip{margin-top:4px;border-top:1px dashed var(--line);padding-top:18px}
-  .pskip .h{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--stamp);margin-bottom:3px}
-  .pskip .sub{font-size:13px;color:var(--ink2);margin:0 0 14px}
-  .skrow{display:flex;gap:11px;padding:11px 0;border-top:1px solid #F1EFE9}
+  .pskip{margin-top:4px;border-top:1px dashed var(--line);padding-top:20px}
+  .pskip .h{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--stamp);margin-bottom:4px}
+  .pskip .sub{font-size:13px;color:var(--ink2);margin:0 0 16px}
+  .skrow{position:relative;display:flex;gap:13px;padding:13px 14px 13px 30px;border:1px solid transparent;
+    border-radius:10px;margin-bottom:2px;transition:background .14s,border-color .14s}
+  .skrow[draggable="true"]::before{content:"";position:absolute;left:11px;top:50%;transform:translateY(-50%);
+    width:8px;height:16px;background-image:radial-gradient(circle,#C3C8CE 1.1px,transparent 1.3px);
+    background-size:4px 5px;opacity:.6;transition:opacity .14s}
+  .skrow[draggable="true"]:hover::before{opacity:1}
+  .skrow[draggable="true"]:hover{background:#FBFAF7;border-color:#EEEBE3}
   .sktag{font-family:'JetBrains Mono',monospace;font-size:8.5px;font-weight:700;letter-spacing:.04em;padding:4px 7px;border-radius:5px;height:fit-content;white-space:nowrap}
   .sktag.TOUGH{background:#F6ECD6;color:#B8862B}
   .sktag.FAIL{background:#F6DDD9;color:#C0392B}
@@ -169,7 +203,7 @@
   .pfoot{display:flex;justify-content:space-between;align-items:center;border-top:1px dashed var(--line);margin-top:6px;padding:14px 0 4px}
   .pfoot .bars{width:170px;height:22px;background-image:repeating-linear-gradient(90deg,var(--ink) 0 1.5px,transparent 1.5px 3px,var(--ink) 3px 4px,transparent 4px 7px);opacity:.5}
   .pfoot .cnt{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--ink2)}
-  @media(max-width:560px){.pblocks{grid-template-columns:1fr}}
+  @media(max-width:560px){.pblk .nm{font-size:14px}}
 
   /* ---------- THE ITINERARY (answer) ---------- */
   .itin{margin-top:22px;background:var(--card);border-radius:16px;box-shadow:var(--shadow);
@@ -551,7 +585,10 @@ function renderState(){
     SLOTS.forEach(slot=>{
       const b=d.blocks[slot];
       if(b){
-        blocks+=`<div class="pblk" draggable="true" data-di="${di}" data-slot="${slot}" data-kind="placed">
+        const lbl=(b.overall&&b.overall.label)||"";
+        const fitCls=lbl==="TOUGH"?" is-tough":(lbl==="FAIL"?" is-fail":"");
+        blocks+=`<div class="pblk${fitCls}" draggable="true" data-di="${di}" data-slot="${slot}" data-kind="placed">
+          <span class="grip"><i></i><i></i><i></i><i></i><i></i><i></i></span>
           <div class="slot">${slot}</div><div class="nm">${esc(b.name_hint)}</div>
           <div class="ppills">${pillsFor(b)}</div></div>`;
       } else {
@@ -704,6 +741,29 @@ function applyDrop(destDi,destSlot){
 }
 
 function renderPlan(data){
+  // Empty-plan guard: the city couldn't be sourced (typo / no data). Show a
+  // helpful message with a "did you mean?" instead of a blank boarding pass.
+  if(data.empty_reason){
+    planState=null;
+    planoutEl.style.display="block";
+    const sugg=(data.empty_suggestions||[]);
+    const chips=sugg.length?`<div class="planempty-chips">${
+      sugg.map(c=>`<button class="planempty-chip" data-city="${c.replace(/"/g,"")}">${c}</button>`).join("")
+    }</div>`:"";
+    planoutEl.innerHTML=`<div class="planempty">
+      <div class="planempty-ic">🧭</div>
+      <div class="planempty-msg">${data.empty_reason.replace(/</g,"&lt;")}</div>
+      <div class="planempty-sub">${sugg.length?"Cities I have great data for:":"Try a major city, or add more detail."}</div>
+      ${chips}
+    </div>`;
+    // wire the suggestion chips to re-plan with that city
+    planoutEl.querySelectorAll(".planempty-chip").forEach(b=>{
+      b.onclick=()=>{ const city=b.getAttribute("data-city");
+        const q=`plan a 2 day ${city} trip`+(/(wheelchair|toddler|senior|stroller|budget|vegetarian|vegan)/i.test(lastPlanQuery)?" "+lastPlanQuery.replace(/^.*?(wheelchair|toddler|senior|stroller|budget|vegetarian|vegan).*$/i,"with a $1"):"");
+        qEl.value=q; go(q); };
+    });
+    return;
+  }
   const it=data.itinerary||{},c=data.contract||{},chips=data.chips||{},crit=it.critique||{};
   // build editable state from the server response
   planState={
