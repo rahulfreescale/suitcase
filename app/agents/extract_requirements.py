@@ -46,7 +46,10 @@ Extract these fields:
   Only resolve when you are confident which real city is meant; if it's genuinely
   ambiguous or not a place, return the user's word as-is (a later step will handle it).
   Return the city's common English proper name, not the nickname.
-- trip_length_days: integer number of days if stated, else null.
+- trip_length_days: integer number of days ONLY if the user explicitly states a
+  number (e.g. "2 days", "a week"=7). If no number of days is stated, you MUST
+  return null. Do NOT guess, assume, or default a length — "a Rome trip" with no
+  number means trip_length_days is null, not 2 or 3.
 - travelers: list of objects, each {{"type": <"adult"|"toddler"|"child"|"senior">,
   "mobility": <"wheelchair"|"stroller"|null>}}. Infer sensibly:
   "someone in a wheelchair" -> {{"type":"adult","mobility":"wheelchair"}};

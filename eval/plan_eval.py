@@ -43,6 +43,18 @@ SCENARIOS = [
         "expect_refused": [],
         "expect_empty": True,   # must refuse gracefully, not fabricate a plan
     },
+    {
+        "name": "Missing days (regression)",
+        "request": "plan a Rome trip with a wheelchair",
+        "hard": None, "must_detect": [], "expect_refused": [],
+        "expect_clarify": True,   # no trip length -> must ask, not blank/fabricate
+    },
+    {
+        "name": "Missing city (regression)",
+        "request": "plan a 2 day trip with a wheelchair",
+        "hard": None, "must_detect": [], "expect_refused": [],
+        "expect_clarify": True,   # no destination -> must ask for the city
+    },
 ]
 
 
@@ -67,20 +79,32 @@ def _has_hard_fail(rated: dict, hard: str | None) -> bool:
 def check(scenario: dict) -> list[str]:
     """Return a list of failure strings (empty = passed)."""
     fails: list[str] = []
-    plan = plan_trip(scenario["request"])
+    plan = plan_trip(scenario["request"], use_cache=False)
 
-    # A plan that asked for clarification or came back empty isn't a constraint
-    # violation — skip the constraint asserts, but note it for visibility.
-    if plan.get("needs_clarification"):
-        return []  # asking for missing info is valid behavior, not a failure
+    # --- graceful-handling expectations (bad/underspecified input) ---
     if scenario.get("expect_empty"):
-        # regression scenario: a fake/unknown city MUST NOT produce a plan
+        # a fake/unknown place MUST NOT fabricate a plan; it must explain why
         placed = _placed_names(plan)
         if placed:
-            fails.append(f"REGRESSION: fake city produced a plan: {placed}")
+            fails.append(f"REGRESSION: unresolved place produced a plan: {placed}")
         if not plan.get("empty_reason"):
-            fails.append("REGRESSION: fake city gave no graceful empty_reason")
+            fails.append("REGRESSION: unresolved place gave no graceful empty_reason")
+        if plan.get("needs_clarification"):
+            fails.append("REGRESSION: unresolved place asked to clarify instead of explaining")
         return fails
+
+    if scenario.get("expect_clarify"):
+        # a missing REQUIRED field (city or days) must ask, not fabricate/blank
+        if not plan.get("needs_clarification"):
+            fails.append("REGRESSION: missing required field did not trigger clarification")
+        if _placed_names(plan):
+            fails.append("REGRESSION: clarification case still produced placed activities")
+        return fails
+
+    # A plan that (unexpectedly) asked for clarification isn't a constraint
+    # violation — skip the constraint asserts.
+    if plan.get("needs_clarification"):
+        return []
 
     placed = _placed_names(plan)
     rated = {}

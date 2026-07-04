@@ -305,11 +305,14 @@ def _bank_rows_from_llm_knowledge(city: str, user_id) -> list:
 
 
 @observe(name="constraint_plan_pipeline")
-def plan_trip(request: str, user_id: str | None = None) -> dict:
+def plan_trip(request: str, user_id: str | None = None, use_cache: bool = True) -> dict:
     """Full chain: request -> contract -> retrieve -> rate -> assemble.
 
     Returns {contract, chips, activities_rated, itinerary, needs_clarification,
              clarification_question}.
+
+    use_cache=False bypasses the semantic cache entirely (read AND write) - used
+    by evals so they test the live pipeline logic, never a stale cached plan.
     """
     # Semantic cache: an identical/near-identical plan request skips the whole
     # pipeline (contract extract + retrieval + per-place LLM rating + assemble),
@@ -319,19 +322,20 @@ def plan_trip(request: str, user_id: str | None = None) -> dict:
     # GUARD: the cache index is shared with /ask, and a raw k-NN lookup can return
     # the nearest *Q&A* answer for the same city (which has no itinerary). Only
     # accept a hit that is actually a plan result AND whose cached query was a plan.
-    try:
-        from app.stores.cache import lookup as _cache_lookup
-        _cached = _cache_lookup("plan::" + request)
-        _is_plan_hit = (
-            isinstance(_cached, dict)
-            and _cached.get("itinerary")
-            and (_cached.get("_cache", {}).get("cached_query", "")).startswith("plan::")
-        )
-        if _is_plan_hit:
-            _cached["_cache_hit"] = True
-            return _cached
-    except Exception:
-        pass
+    if use_cache:
+        try:
+            from app.stores.cache import lookup as _cache_lookup
+            _cached = _cache_lookup("plan::" + request)
+            _is_plan_hit = (
+                isinstance(_cached, dict)
+                and _cached.get("itinerary")
+                and (_cached.get("_cache", {}).get("cached_query", "")).startswith("plan::")
+            )
+            if _is_plan_hit:
+                _cached["_cache_hit"] = True
+                return _cached
+        except Exception:
+            pass
 
     # Phase 1: extract the contract (+ detected/suggested chips)
     state = {"query": request, "thread_id": "plan"}
@@ -340,13 +344,57 @@ def plan_trip(request: str, user_id: str | None = None) -> dict:
     chips = {"detected": ex["detected_constraints"],
              "suggested": ex["suggested_constraints"]}
 
-    # If a REQUIRED field is missing (destination / trip length), stop and ask -
-    # exactly like the clarify design. No point retrieving without a city.
-    if ex.get("needs_clarification"):
-        return {"contract": contract, "chips": chips,
-                "needs_clarification": True,
-                "clarification_question": ex.get("clarification_question"),
-                "activities_rated": [], "itinerary": None}
+    # Required-field guard (code-enforced, not LLM-trusted): destination AND
+    # trip length are both required. The LLM sets needs_clarification, but it
+    # sometimes proceeds with a null trip length - so we check deterministically
+    # here too and ask, rather than assembling an empty/degenerate plan.
+    _dest = contract.get("destination")
+    _days = contract.get("trip_length_days")
+    # Safety net: the LLM sometimes "helpfully" defaults a trip length the user
+    # never gave. A constraint-faithful planner must not invent it. If the raw
+    # request contains no explicit day/week signal, force days back to null so
+    # the guard below asks rather than fabricating.
+    import re as _re
+    if _days and not _re.search(r"\b(\d+\s*(day|days|night|nights|week|weeks)|a\s+week|weekend|fortnight)\b",
+                                request, _re.I):
+        _days = None
+        contract["trip_length_days"] = None
+    if ex.get("needs_clarification") or not _dest or not _days:
+        # Order matters. Handle the cases from most-specific to least:
+        #   1. destination missing entirely            -> ask which city
+        #   2. destination present but days missing     -> ask how many days
+        #      (a real city like "Rome" with no day count lands here - do NOT
+        #       mistake it for an unrecognized place just because the LLM raised
+        #       needs_clarification about the missing days)
+        #   3. destination present, days present, but the LLM still flags
+        #      clarification -> it doesn't recognize the place (e.g. "Zputnik")
+        #      -> "couldn't find it" with suggestions
+        import re, random
+        corpus = _corpus_cities()
+
+        if not _dest:
+            return {"contract": contract, "chips": chips,
+                    "needs_clarification": True,
+                    "clarification_question": "Which city are you visiting?",
+                    "activities_rated": [], "itinerary": None}
+
+        if not _days:
+            return {"contract": contract, "chips": chips,
+                    "needs_clarification": True,
+                    "clarification_question": f"How many days is your {_dest} trip?",
+                    "activities_rated": [], "itinerary": None}
+
+        # dest + days both present, yet the LLM asked to clarify -> unknown place
+        if ex.get("needs_clarification"):
+            sugg = _closest_city(_dest, corpus)
+            reason = (f"I couldn't find travel data for \u201c{_dest}\u201d."
+                      + (f" Did you mean {sugg}?" if sugg and sugg.lower() != _dest.lower()
+                         else " Could you try a major city?"))
+            return {"contract": contract, "chips": chips,
+                    "needs_clarification": False,
+                    "empty_reason": reason,
+                    "empty_suggestions": random.sample(corpus, min(6, len(corpus))) if corpus else [],
+                    "activities_rated": [], "itinerary": None}
 
     # Retrieve real section-chunks for the destination
     # Activity sourcing (Fix A): the BANK is the authoritative catalog of a
@@ -447,7 +495,7 @@ def plan_trip(request: str, user_id: str | None = None) -> dict:
     }
     # cache the finished plan so a repeat/near-identical request is instant
     # (skip caching an empty/failed plan so a fixed corpus later can succeed)
-    if not empty_reason:
+    if use_cache and not empty_reason:
         try:
             from app.stores.cache import store as _cache_store
             _cache_store("plan::" + request, result)

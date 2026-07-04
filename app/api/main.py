@@ -96,7 +96,34 @@ def plan(req: PlanRequest, user_id: str = Depends(current_user)):
     return JSONResponse(result)
 
 
-@app.get("/trail/{thread_id}")
+class FeedbackRequest(BaseModel):
+    place: str
+    city: str | None = None
+    constraint: str | None = "wheelchair"
+    current_label: str | None = None
+    proposed_label: str | None = None
+    source: str = "user_explicit"   # user_explicit | user_implicit | auto_review
+    direction: str = "disagree"      # agree | disagree
+    note: str | None = ""
+
+
+@app.post("/feedback")
+def feedback(req: FeedbackRequest, user_id: str = Depends(current_user)):
+    """Capture a correction on a rating — the raw signal for the feedback loop.
+
+    Two implicit/explicit sources feed the same store: a 👍/👎 on a rated place
+    (explicit), or dragging a "left out" place back into the plan (implicit
+    'you were too harsh'). Corrections are recorded as PENDING and never touch
+    the bank directly — a human-reviewed sync job weighs and promotes them,
+    adjusting confidence. Logging never blocks the caller.
+    """
+    from app.stores import corrections
+    item = corrections.log_correction(
+        place=req.place, city=req.city or "", constraint=req.constraint or "wheelchair",
+        current_label=req.current_label, proposed_label=req.proposed_label,
+        source=req.source, direction=req.direction,
+        note=req.note or "", user_id=user_id or "anon")
+    return {"ok": True, "status": item.get("status", "pending")}
 def trail(thread_id: str):
     """The transparent step-by-step trail (intermediate steps) for a request."""
     try:

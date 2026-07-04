@@ -163,6 +163,12 @@
   .edithint{display:flex;align-items:center;gap:8px;font-size:12.5px;color:#8A9099;margin:0 0 16px}
   .planempty{text-align:center;padding:44px 24px}
   .planempty-ic{font-size:34px;margin-bottom:12px}
+  .fbrow{display:flex;gap:6px;margin-top:10px;align-items:center;position:relative}
+  .fb{border:1px solid var(--line);background:#fff;border-radius:7px;padding:3px 8px;font-size:12px;cursor:pointer;line-height:1;opacity:.55;transition:.14s}
+  .fb:hover{opacity:1;transform:translateY(-1px);border-color:#c9c3b2}
+  .fb.chosen{opacity:1;border-color:var(--navy);background:#EEF1F6}
+  .fbrow[data-done]::after{content:attr(data-done);font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.03em;color:#8A9099;margin-left:4px}
+  .fbrow[data-done] .fb:not(.chosen){display:none}
   .planempty-msg{font-family:'Archivo',sans-serif;font-weight:700;font-size:17px;color:var(--navy);line-height:1.35;max-width:420px;margin:0 auto}
   .planempty-sub{font-size:13px;color:#8A9099;margin-top:8px}
   .planempty-chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:16px;max-width:460px;margin-left:auto;margin-right:auto}
@@ -219,6 +225,9 @@
     animation:flip 1s ease-in-out infinite;flex-shrink:0}
   .status.done{background:#0d2b22;color:#7FE0C0}
   .status.done .dotpulse{background:#7FE0C0;animation:none}
+  .status.needs{background:#2a2416;color:#E8C766}
+  .status.needs .dotpulse{background:#E8C766;animation:none}
+  .status.needs .st-txt{overflow:hidden}
   .status .st-txt{overflow:hidden}
   @keyframes flip{0%,100%{opacity:1}50%{opacity:.25}}
 
@@ -410,7 +419,7 @@ const qEl=$("#q"),sendEl=$("#send"),itin=$("#itin"),statusEl=$("#status"),sttxt=
 let streaming=false;
 const micEl=document.querySelector("#mic");
 
-function setStatus(txt,done){ statusEl.classList.toggle("done",!!done); sttxt.textContent=txt; }
+function setStatus(txt,done,state){ statusEl.classList.toggle("done",!!done); statusEl.classList.toggle("needs",state==="needs"); sttxt.textContent=txt; }
 
 function ask(query){
   if(streaming||!query.trim())return;
@@ -590,7 +599,11 @@ function renderState(){
         blocks+=`<div class="pblk${fitCls}" draggable="true" data-di="${di}" data-slot="${slot}" data-kind="placed">
           <span class="grip"><i></i><i></i><i></i><i></i><i></i><i></i></span>
           <div class="slot">${slot}</div><div class="nm">${esc(b.name_hint)}</div>
-          <div class="ppills">${pillsFor(b)}</div></div>`;
+          <div class="ppills">${pillsFor(b)}</div>
+          <div class="fbrow" data-place="${esc(b.name_hint)}" data-label="${esc((b.overall&&b.overall.label)||"")}">
+            <button class="fb up" title="Good call">👍</button>
+            <button class="fb down" title="This rating seems off">👎</button>
+          </div></div>`;
       } else {
         blocks+=`<div class="pblk drop-empty" data-di="${di}" data-slot="${slot}">
           <div class="slot">${slot}</div><div class="empty">— open —</div></div>`;
@@ -630,6 +643,7 @@ function renderState(){
   planoutEl.style.display="block";
   wireChips();
   wireDnD();
+  wireFeedback();
   const pb=document.getElementById("pdfBtn"); if(pb) pb.onclick=exportPDF;
 }
 
@@ -691,6 +705,30 @@ function wireChips(){
   });
 }
 
+// ---- feedback capture (explicit 👍👎 + implicit drag signal) ----
+function sendFeedback(payload){
+  // fire-and-forget; never blocks the UI
+  try{
+    authedFetch("/feedback",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify(Object.assign({city:planState&&planState.destination},payload))});
+  }catch(e){}
+}
+function wireFeedback(){
+  planoutEl.querySelectorAll(".fbrow").forEach(row=>{
+    const place=row.getAttribute("data-place"), label=row.getAttribute("data-label");
+    row.querySelectorAll(".fb").forEach(btn=>{
+      btn.onclick=()=>{
+        const up=btn.classList.contains("up");
+        sendFeedback({place, current_label:label, source:"user_explicit",
+          direction:up?"agree":"disagree"});
+        row.querySelectorAll(".fb").forEach(b=>b.classList.remove("chosen"));
+        btn.classList.add("chosen");
+        row.setAttribute("data-done", up?"👍 thanks":"👎 noted — we'll review");
+      };
+    });
+  });
+}
+
 // ---- drag and drop ----
 let dragSrc=null;  // {kind:'placed'|'skipped', di, slot, si}
 function wireDnD(){
@@ -731,6 +769,12 @@ function applyDrop(destDi,destSlot){
   } else if(dragSrc.kind==="skipped"){
     const srcItem=st.skipped[dragSrc.si];
     if(!srcItem) return;
+    // IMPLICIT SIGNAL: user dragged a "left out" place INTO the plan — that's a
+    // disagreement with our refusal ("your rating was too harsh"). Capture it.
+    sendFeedback({place:srcItem.name_hint,
+      current_label:(srcItem.overall&&srcItem.overall.label)||"TOUGH",
+      proposed_label:"GOOD", source:"user_implicit", direction:"disagree",
+      note:"user dragged a left-out place into the plan"});
     // pull from skipped into the slot; if slot was occupied, bump that back to skipped
     st.skipped.splice(dragSrc.si,1);
     st.days[destDi].blocks[destSlot]=srcItem;
@@ -741,6 +785,19 @@ function applyDrop(destDi,destSlot){
 }
 
 function renderPlan(data){
+  // Needs-clarification: a required field (like trip length) is missing. Ask for
+  // it clearly instead of rendering a blank plan.
+  if(data.needs_clarification){
+    planState=null;
+    planoutEl.style.display="block";
+    const q=data.clarification_question||"I need a little more detail to plan this. How many days is your trip?";
+    planoutEl.innerHTML=`<div class="planempty">
+      <div class="planempty-ic">✈️</div>
+      <div class="planempty-msg">${q.replace(/</g,"&lt;")}</div>
+      <div class="planempty-sub">Add it to your request and hit Board again — e.g. “2 day ${(data.contract&&data.contract.destination)||"Rome"} trip”.</div>
+    </div>`;
+    return;
+  }
   // Empty-plan guard: the city couldn't be sourced (typo / no data). Show a
   // helpful message with a "did you mean?" instead of a blank boarding pass.
   if(data.empty_reason){
@@ -790,7 +847,12 @@ function planTrip(query){
   setStatus("Extracting constraints · retrieving · rating · assembling",false);
   authedFetch("/plan",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({query,user_id:"ui"})})
   .then(r=>{if(!r.ok)throw new Error("Server "+r.status);return r.json();})
-  .then(data=>{ setStatus("Itinerary ready",true); renderPlan(data); })
+  .then(data=>{
+    if(data.needs_clarification) setStatus("One quick question",true,"needs");
+    else if(data.empty_reason) setStatus("Couldn't build this plan",true,"needs");
+    else setStatus("Itinerary ready",true);
+    renderPlan(data);
+  })
   .catch(e=>{ setStatus("Couldn't plan this trip: "+e.message,true); })
   .finally(()=>{ planning=false; sendEl.disabled=false; });
 }

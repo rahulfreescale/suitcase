@@ -150,3 +150,24 @@ def _cosine(a: list[float], b: list[float]) -> float:
     na = math.sqrt(sum(x * x for x in a))
     nb = math.sqrt(sum(y * y for y in b))
     return dot / (na * nb) if na and nb else 0.0
+
+
+def clear() -> None:
+    """Purge the semantic cache by deleting and recreating the index.
+
+    Use when a bad result got cached (e.g. an early buggy plan) so the fix can
+    take effect - the cache would otherwise keep serving the stale bad answer.
+    """
+    if not _s.cache_enabled:
+        print("[cache] disabled; nothing to clear")
+        return
+    try:
+        from app.stores.vector_opensearch import get_client
+        c = get_client()
+        if c.indices.exists(_s.cache_index):
+            c.indices.delete(_s.cache_index)
+            print(f"[cache] deleted index '{_s.cache_index}'")
+        create_cache_index()
+        print(f"[cache] recreated empty index '{_s.cache_index}'")
+    except Exception as e:
+        print(f"[cache] clear failed: {type(e).__name__}: {e}")
