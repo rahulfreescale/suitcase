@@ -1,11 +1,11 @@
-city,place,is_famous,wheelchair,toddler,senior,confidence,note,source
-Santa Cruz,Santa Cruz Beach Boardwalk,True,GOOD,EXCELLENT,GOOD,LOW,Mostly flat boardwalk with ramps to beach; some rides have accessibility accommodations but vintage wooden coaster has limited access.,llm knowledge
-Santa Cruz,Natural Bridges State Beach,True,TOUGH,TOUGH,TOUGH,LOW,Steep stairs and unpaved paths required to reach the main beach and arch; limited wheelchair accessibility.,llm knowledge
-Santa Cruz,Santa Cruz Wharf,True,GOOD,GOOD,GOOD,LOW,Mostly level wooden boardwalk with accessible restrooms and restaurants; some shops may have narrow entrances.,llm knowledge
-Santa Cruz,Monterey Bay National Marine Sanctuary Visitor Center,True,EXCELLENT,EXCELLENT,EXCELLENT,LOW,"Fully accessible modern facility with ramps, elevators, accessible parking, and restrooms.",llm knowledge
-Santa Cruz,Santa Cruz Museum of Art & History,True,EXCELLENT,GOOD,EXCELLENT,LOW,"Fully wheelchair accessible with elevators, accessible parking, and accessible restrooms throughout.",llm knowledge
-Santa Cruz,Seymour Marine Discovery Center,True,GOOD,GOOD,GOOD,LOW,Mostly accessible with ramps and level pathways; some outdoor areas may have uneven terrain.,llm knowledge
-Santa Cruz,Mission Santa Cruz,True,TOUGH,TOUGH,TOUGH,LOW,Historic mission with stairs and uneven terrain; limited wheelchair accessibility to main buildings.,llm knowledge
-Santa Cruz,Henry Cowell Redwoods State Park,True,TOUGH,TOUGH,TOUGH,LOW,Hiking trails with stairs and uneven terrain; some accessible parking but main redwood grove requires walking on unpaved paths.,llm knowledge
-Santa Cruz,Santa Cruz Beach (Main Beach),True,GOOD,EXCELLENT,GOOD,LOW,Beach wheelchair rentals available; accessible parking and restrooms; sandy beach requires assistance for some users.,llm knowledge
-Santa Cruz,Capitola Village,True,TOUGH,TOUGH,TOUGH,LOW,"Charming historic village with narrow streets, stairs, and uneven pavement; limited wheelchair accessibility in main shopping area.",llm knowledge
+city,place,is_famous,wheelchair,toddler,senior,confidence,note,source,lat,lng
+Santa Cruz,Santa Cruz Beach Boardwalk,True,GOOD,EXCELLENT,GOOD,LOW,Mostly flat boardwalk with ramps to beach; some rides have accessibility accommodations but vintage wooden coaster has limited access.,llm knowledge,36.9645628,-122.0153842
+Santa Cruz,Natural Bridges State Beach,True,TOUGH,TOUGH,TOUGH,LOW,Steep stairs and unpaved paths required to reach the main beach and arch; limited wheelchair accessibility.,llm knowledge,36.9520839,-122.0571253
+Santa Cruz,Santa Cruz Wharf,True,GOOD,GOOD,GOOD,LOW,Mostly level wooden boardwalk with accessible restrooms and restaurants; some shops may have narrow entrances.,llm knowledge,36.9585053,-122.0178676
+Santa Cruz,Monterey Bay National Marine Sanctuary Visitor Center,True,EXCELLENT,EXCELLENT,EXCELLENT,LOW,"Fully accessible modern facility with ramps, elevators, accessible parking, and restrooms.",llm knowledge,,
+Santa Cruz,Santa Cruz Museum of Art & History,True,EXCELLENT,GOOD,EXCELLENT,LOW,"Fully wheelchair accessible with elevators, accessible parking, and accessible restrooms throughout.",llm knowledge,36.9744752,-122.0253696
+Santa Cruz,Seymour Marine Discovery Center,True,GOOD,GOOD,GOOD,LOW,Mostly accessible with ramps and level pathways; some outdoor areas may have uneven terrain.,llm knowledge,36.9491563,-122.064866
+Santa Cruz,Mission Santa Cruz,True,TOUGH,TOUGH,TOUGH,LOW,Historic mission with stairs and uneven terrain; limited wheelchair accessibility to main buildings.,llm knowledge,36.9774863,-122.0280764
+Santa Cruz,Henry Cowell Redwoods State Park,True,TOUGH,TOUGH,TOUGH,LOW,Hiking trails with stairs and uneven terrain; some accessible parking but main redwood grove requires walking on unpaved paths.,llm knowledge,37.077624,-122.1174804
+Santa Cruz,Santa Cruz Beach (Main Beach),True,GOOD,EXCELLENT,GOOD,LOW,Beach wheelchair rentals available; accessible parking and restrooms; sandy beach requires assistance for some users.,llm knowledge,36.9628352,-122.0214682
+Santa Cruz,Capitola Village,True,TOUGH,TOUGH,TOUGH,LOW,"Charming historic village with narrow streets, stairs, and uneven pavement; limited wheelchair accessibility in main shopping area.",llm knowledge,36.9726846,-121.9521374

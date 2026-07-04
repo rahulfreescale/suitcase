@@ -7,6 +7,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Inter:wght@400;450;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <style>
   :root{
     --ink:#141C26; --ink2:#5C6773; --line:#DFDCD3; --paper:#EDE9E0;
@@ -292,6 +294,27 @@
     .pp-foot{margin-top:16px;font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:.1em;
       color:#A7ADB4;text-align:center;text-transform:uppercase}
   }
+  .pmap-wrap{margin:6px 0 20px;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--card);box-shadow:var(--shadow)}
+  .pmap-head{display:flex;align-items:center;justify-content:space-between;padding:11px 15px 10px;border-bottom:1px solid var(--line);flex-wrap:wrap;gap:8px}
+  .pmap-title{font-family:'Archivo',sans-serif;font-weight:700;font-size:13px;color:var(--navy);letter-spacing:.01em}
+  .pmap-legend{display:flex;gap:14px;font-family:'JetBrains Mono',monospace;font-size:9.5px;color:var(--ink2);flex-wrap:wrap}
+  .pmap-legend span{display:flex;align-items:center;gap:5px}
+  .lgdot{width:10px;height:10px;border-radius:50%}
+  .lgring{width:11px;height:11px;border-radius:50%;background:#F3E0D4;border:2px solid var(--stamp);box-sizing:border-box}
+  #pmap{height:420px;width:100%}
+  @media(max-width:560px){#pmap{height:320px}}
+  .pmap-daytabs{display:flex;gap:6px;padding:10px 14px;border-top:1px solid var(--line);flex-wrap:wrap;background:#FBFAF6}
+  .pmap-tab{font-family:'JetBrains Mono',monospace;font-size:10.5px;font-weight:500;padding:5px 11px;border-radius:7px;border:1px solid var(--line);background:#fff;color:var(--ink2);cursor:pointer;display:flex;align-items:center;gap:6px}
+  .pmap-tab .d{width:8px;height:8px;border-radius:50%}
+  .pmap-tab.on{color:#fff;border-color:transparent}
+  .pmap-note{padding:9px 15px;font-size:11px;color:#8A8577;border-top:1px solid var(--line);font-style:italic;background:#FBFAF6}
+  .pday-flash{animation:pdayflash .9s ease-out}
+  @keyframes pdayflash{0%{background:rgba(58,107,138,.12)}100%{background:transparent}}
+  .pinL{background:transparent;border:none}
+  .pinL .b{width:26px;height:26px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.3);border:2px solid #fff}
+  .pinL .b span{transform:rotate(45deg);color:#fff;font-weight:700;font-size:12px;font-family:'Archivo',sans-serif}
+  .pinS{width:24px;height:24px;border-radius:50%;background:#F3E0D4;border:2px solid var(--stamp);display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.22)}
+  .pinS i{color:#8A3D1F;font-style:normal;font-size:13px;font-weight:700;line-height:1}
 </style>
 </head>
 <body>
@@ -587,6 +610,7 @@ function renderState(){
   if(sug) chipHtml+=`<div class="chiprow"><span class="chiplab">Add a constraint</span><div class="chipset">${sug}</div></div>`;
   html+=`<div class="pchips">${chipHtml}</div>`;
   html+=`<div class="edithint">Drag any card to a different slot or day. Drag a “left out” spot up to swap it in.</div>`;
+  html+=`<div id="pmapHost"></div>`;
   // days
   st.days.forEach((d,di)=>{
     const fit=dayFit(d);
@@ -609,7 +633,7 @@ function renderState(){
           <div class="slot">${slot}</div><div class="empty">— open —</div></div>`;
       }
     });
-    html+=`<div class="pday"><div class="pday-head"><span class="pday-num">Day ${d.day}</span>
+    html+=`<div class="pday" id="pday-${d.day}"><div class="pday-head"><span class="pday-num">Day ${d.day}</span>
       <div class="fitbar"><span style="width:${fit}%"></span></div><span class="pfit">${fit}% fit</span></div>
       <div class="pblocks">${blocks}</div></div>`;
   });
@@ -644,7 +668,105 @@ function renderState(){
   wireChips();
   wireDnD();
   wireFeedback();
+  renderMap();
   const pb=document.getElementById("pdfBtn"); if(pb) pb.onclick=exportPDF;
+}
+
+// ---- interactive itinerary map (Leaflet) ----
+const DAY_COLORS=["#B0532E","#3E6B8A","#5A7A4E","#8A6D3B","#6B4E7A"];
+let _pmap=null, _pmapLayer=null, _pmapActiveDay=0;
+
+function _hasCoord(o){ return o && typeof o.lat==="number" && typeof o.lng==="number"; }
+function _distKm(a,b){ const dx=a.lat-b.lat, dy=(a.lng-b.lng)*Math.cos(a.lat*Math.PI/180); return Math.sqrt(dx*dx+dy*dy); }
+
+// nearest-neighbor order a day's stops so the route doesn't zig-zag (mirrors backend)
+function _orderStops(stops){
+  if(stops.length<=2) return stops.slice();
+  const rem=stops.slice(), out=[rem.shift()];
+  while(rem.length){ const last=out[out.length-1];
+    let bi=0,bd=Infinity; rem.forEach((s,i)=>{const d=_distKm(last,s); if(d<bd){bd=d;bi=i;}});
+    out.push(rem.splice(bi,1)[0]); }
+  return out;
+}
+
+function renderMap(){
+  const host=document.getElementById("pmapHost"); if(!host) return;
+  const st=planState; if(!st){ host.innerHTML=""; return; }
+  if(typeof L==="undefined"){ console.warn("[map] Leaflet (L) not loaded — map skipped"); host.innerHTML=""; return; }
+  try{ _renderMapInner(host, st); }
+  catch(err){ console.error("[map] renderMap failed:", err); host.innerHTML=""; }
+}
+
+function _renderMapInner(host, st){
+
+  // collect placed stops with coords, per day, in slot order
+  const days=st.days.map(d=>{
+    const stops=[];
+    SLOTS.forEach(slot=>{ const b=d.blocks[slot]; if(_hasCoord(b)) stops.push({name:b.name_hint,slot,lat:b.lat,lng:b.lng,fit:(b.overall&&b.overall.label)||""}); });
+    return {day:d.day, stops:_orderStops(stops)};
+  }).filter(d=>d.stops.length);
+
+  const skipped=(st.skipped||[]).filter(_hasCoord)
+    .map(s=>({name:s.name_hint,lat:s.lat,lng:s.lng,reason:s.reason}));
+
+  const totalPlaced=days.reduce((a,d)=>a+d.stops.length,0);
+  // if nothing has coordinates, don't show an empty map
+  if(!totalPlaced && !skipped.length){ host.innerHTML=""; return; }
+
+  if(_pmapActiveDay>=days.length) _pmapActiveDay=0;
+
+  const legend=`<div class="pmap-legend">${days.map((d,i)=>
+    `<span><i class="lgdot" style="background:${DAY_COLORS[i%DAY_COLORS.length]}"></i>Day ${d.day}</span>`).join("")}
+    ${skipped.length?`<span><i class="lgring"></i>left out — near, inaccessible</span>`:""}</div>`;
+
+  const tabs=days.length>1 ? `<div class="pmap-daytabs">${days.map((d,i)=>
+    `<div class="pmap-tab${i===_pmapActiveDay?" on":""}" data-mday="${i}" data-daynum="${d.day}" ${i===_pmapActiveDay?`style="background:${DAY_COLORS[i%DAY_COLORS.length]}"`:""}>
+      <span class="d" style="background:${i===_pmapActiveDay?"#fff":DAY_COLORS[i%DAY_COLORS.length]}"></span>Day ${d.day}</div>`).join("")}</div>` : "";
+
+  host.innerHTML=`<div class="pmap-wrap">
+    <div class="pmap-head"><span class="pmap-title">Your route on the map</span>${legend}</div>
+    <div id="pmap"></div>${tabs}
+    <div class="pmap-note">Each day is ordered to keep stops close together. Faded pins are famous spots left out for your constraints — shown where they are, so you can see they were skipped for access, not distance.</div>
+  </div>`;
+
+  // (re)build the leaflet map
+  if(_pmap){ _pmap.remove(); _pmap=null; }
+  _pmap=L.map("pmap",{scrollWheelZoom:false}).setView([days[0]?.stops[0]?.lat||0, days[0]?.stops[0]?.lng||0],13);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{attribution:"&copy; OpenStreetMap",maxZoom:19}).addTo(_pmap);
+  _pmapLayer=L.layerGroup().addTo(_pmap);
+  _drawDay(days, skipped);
+  // container was just inserted into the DOM; let layout settle then fix tile sizing
+  setTimeout(()=>{ if(_pmap) _pmap.invalidateSize(); _drawDay(days, skipped); }, 60);
+
+  host.querySelectorAll(".pmap-tab").forEach(t=>{
+    t.onclick=()=>{
+      _pmapActiveDay=+t.dataset.mday;
+      const daynum=t.dataset.daynum;
+      renderMap();
+      const sec=document.getElementById("pday-"+daynum);
+      if(sec){ sec.scrollIntoView({behavior:"smooth", block:"start"});
+        sec.classList.add("pday-flash"); setTimeout(()=>sec.classList.remove("pday-flash"), 900); }
+    };
+  });
+}
+
+function _drawDay(days, skipped){
+  if(!_pmap) return;
+  _pmapLayer.clearLayers();
+  const day=days[_pmapActiveDay]; if(!day) return;
+  const color=DAY_COLORS[_pmapActiveDay%DAY_COLORS.length];
+  const pts=day.stops.map(s=>[s.lat,s.lng]);
+  if(pts.length>1) L.polyline(pts,{color,weight:3,opacity:.75}).addTo(_pmapLayer);
+  day.stops.forEach((s,i)=>{
+    const ic=L.divIcon({className:"pinL",html:`<div class="b" style="background:${color}"><span>${i+1}</span></div>`,iconSize:[26,26],iconAnchor:[13,24]});
+    L.marker([s.lat,s.lng],{icon:ic}).bindPopup(`<b>${i+1}. ${esc(s.name)}</b><br><span style="color:#5C6773">${s.slot}${s.fit?" · "+s.fit:""}</span>`).addTo(_pmapLayer);
+  });
+  skipped.forEach(s=>{
+    const ic=L.divIcon({className:"pinS-wrap",html:`<div class="pinS"><i>✕</i></div>`,iconSize:[24,24],iconAnchor:[12,12]});
+    L.marker([s.lat,s.lng],{icon:ic}).bindPopup(`<b style="color:#8A3D1F">${esc(s.name)} — left out</b><br><span style="color:#5C6773">${esc(s.reason||"")}</span>`).addTo(_pmapLayer);
+  });
+  const all=pts.concat(skipped.map(s=>[s.lat,s.lng]));
+  if(all.length){ _pmap.fitBounds(L.latLngBounds(all).pad(0.3),{maxZoom:15}); }
 }
 
 // ---- PDF export: render current planState into a print-only boarding pass ----

@@ -310,9 +310,13 @@ def rate_activity(activity: dict, contract: dict, user_id=None) -> dict:
     else:
         overall = {"label": "TOUGH", "score": 35}  # no constraints to judge
 
+    ret_activity = {"name": activity.get("name"), "city": activity.get("city"),
+                    "page": activity.get("page"), "text": text[:200]}
+    if activity.get("lat") is not None and activity.get("lng") is not None:
+        ret_activity["lat"], ret_activity["lng"] = activity["lat"], activity["lng"]
+
     return {
-        "activity": {"city": activity.get("city"), "page": activity.get("page"),
-                     "text": text[:200]},
+        "activity": ret_activity,
         "overall": overall,
         "per_constraint": per,
         "used_bank": used_bank,

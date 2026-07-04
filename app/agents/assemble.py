@@ -30,6 +30,54 @@ _WEAK_DAY_MIN = 55      # day-fit % below this -> critic flags the day
 _MIN_GOOD_PER_DAY = 2   # fewer good-fits than blocks*days may leave gaps
 
 
+def _haversine_ish(a: dict, b: dict) -> float:
+    """Cheap planar distance between two placed blocks with lat/lng.
+
+    Not true great-circle distance - within a single city the flat approximation
+    (scaling longitude by cos(lat) so a degree of lng shrinks toward the poles)
+    is more than accurate enough to order 2-3 stops, and it's instant.
+    """
+    import math
+    dlat = a["lat"] - b["lat"]
+    dlng = (a["lng"] - b["lng"]) * math.cos(math.radians(a["lat"]))
+    return math.hypot(dlat, dlng)
+
+
+def _order_day_geographically(day_blocks: dict) -> dict:
+    """Reorder a day's morning/afternoon/evening so the route doesn't zig-zag.
+
+    Keeps the same PLACES on the same DAY (day assignment is untouched) - it only
+    resequences within the day. Anchors on whatever fills the morning slot, then
+    picks the nearest remaining stop at each step (nearest-neighbor). With 2-3
+    stops this is effectively optimal. Blocks are then relabeled in travel order
+    so the first stop is 'morning', etc.
+
+    Falls back to the original order if any placed stop lacks coordinates - we
+    never guess a route we can't ground.
+    """
+    placed = [(b, day_blocks[b]) for b in _BLOCKS if day_blocks.get(b)]
+    if len(placed) < 2:
+        return day_blocks
+    stops = [blk for _, blk in placed]
+    if any(("lat" not in s or "lng" not in s) for s in stops):
+        return day_blocks  # missing coords -> leave as-is, don't fabricate a route
+
+    remaining = stops[:]
+    ordered = [remaining.pop(0)]  # anchor = current morning stop
+    while remaining:
+        last = ordered[-1]
+        nxt = min(range(len(remaining)),
+                  key=lambda i: _haversine_ish(last, remaining[i]))
+        ordered.append(remaining.pop(nxt))
+
+    # relabel into travel order across the slots this day actually had filled
+    filled_slots = [b for b, _ in placed]
+    new_blocks = {b: None for b in _BLOCKS}
+    for slot, stop in zip(filled_slots, ordered):
+        new_blocks[slot] = stop
+    return new_blocks
+
+
 def _is_good_fit(rated: dict) -> bool:
     """Good enough to place in the plan: no hard FAIL, decent overall."""
     per = rated.get("per_constraint", {})
@@ -162,13 +210,17 @@ def assemble_itinerary(rated_activities: list[dict], contract: dict) -> dict:
     slots = [(d, b) for d in range(1, days_count + 1) for b in _BLOCKS]  # day-major order
     days = {d: {b: None for b in _BLOCKS} for d in range(1, days_count + 1)}
     for rated, (d, b) in zip(good, slots):
-        days[d][b] = {
-            "name_hint": rated["activity"].get("name") or rated["activity"].get("text", "")[:80],
-            "city": rated["activity"].get("city"),
-            "page": rated["activity"].get("page"),
+        act = rated["activity"]
+        block = {
+            "name_hint": act.get("name") or act.get("text", "")[:80],
+            "city": act.get("city"),
+            "page": act.get("page"),
             "overall": rated["overall"],
             "per_constraint": rated["per_constraint"],
         }
+        if act.get("lat") is not None and act.get("lng") is not None:
+            block["lat"], block["lng"] = act["lat"], act["lng"]
+        days[d][b] = block
     leftover_good = good[len(slots):]  # more good-fits than slots (fine; extras)
 
     # 3. skipped list: poor-fit places, origin-tagged.
@@ -179,7 +231,7 @@ def assemble_itinerary(rated_activities: list[dict], contract: dict) -> dict:
         act = rated["activity"]
         section = (act.get("section_hint") or "")
         is_guide_flagged = "Popular but Challenging" in section
-        skipped.append({
+        sk = {
             "name_hint": act.get("name") or act.get("text", "")[:80],
             "city": act.get("city"),
             "page": act.get("page"),
@@ -189,7 +241,10 @@ def assemble_itinerary(rated_activities: list[dict], contract: dict) -> dict:
             "reason": _fail_reason(rated),
             "origin": "guide_flagged" if is_guide_flagged else "rating",
             "alternative": None,
-        })
+        }
+        if act.get("lat") is not None and act.get("lng") is not None:
+            sk["lat"], sk["lng"] = act["lat"], act["lng"]
+        skipped.append(sk)
     # surface famous ones first - they're what the user recognizes and cares about
     skipped.sort(key=lambda s: (not s["is_famous"], s["overall"]["score"]))
 
@@ -221,10 +276,11 @@ def assemble_itinerary(rated_activities: list[dict], contract: dict) -> dict:
     for d in range(1, days_count + 1):
         placed_n = days[d]["_placed_count"]
         empty_n = len(_BLOCKS) - placed_n
+        ordered_blocks = _order_day_geographically({b: days[d][b] for b in _BLOCKS})
         day = {
             "day": d,
             "day_fit": days[d]["_day_fit"],
-            "blocks": {b: days[d][b] for b in _BLOCKS},
+            "blocks": ordered_blocks,
             "placed_count": placed_n,
             "empty_count": empty_n,
         }

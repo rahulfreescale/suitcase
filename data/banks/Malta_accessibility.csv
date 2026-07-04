@@ -1,11 +1,11 @@
-city,place,is_famous,wheelchair,toddler,senior,confidence,note,source
-Malta,Valletta,True,TOUGH,TOUGH,TOUGH,LOW,"UNESCO site with steep narrow streets, many stairs, and uneven cobblestones throughout the historic center.",llm knowledge
-Malta,Mdina,True,TOUGH,TOUGH,TOUGH,LOW,"Medieval walled city with narrow winding streets, steps, and very limited wheelchair access in the old town.",llm knowledge
-Malta,Popeye Village,True,GOOD,GOOD,GOOD,LOW,Purpose-built theme park with mostly level pathways and accessible facilities throughout.,llm knowledge
-Malta,Hypogeum of Hal-Saflieni,True,FAIL,FAIL,FAIL,LOW,"Underground prehistoric temple with narrow passages, stairs, and no wheelchair access; timed tours only.",llm knowledge
-Malta,St. John's Co-Cathedral,True,GOOD,GOOD,GOOD,LOW,Valletta cathedral with step-free entry via ramp and accessible interior layout.,llm knowledge
-Malta,Comino & Blue Lagoon,True,TOUGH,TOUGH,TOUGH,LOW,Beach destination requiring boat access and sandy/rocky terrain with limited facilities.,llm knowledge
-Malta,Fort St. Elmo,True,TOUGH,TOUGH,TOUGH,LOW,"Historic fortification with multiple levels, stairs, and uneven surfaces; partial wheelchair access only.",llm knowledge
-Malta,National Museum of Archaeology,True,GOOD,GOOD,GOOD,LOW,"Modern museum in Valletta with elevators, accessible galleries, and accessible facilities.",llm knowledge
-Malta,Dingli Cliffs,True,UNKNOWN,TOUGH,TOUGH,LOW,Scenic clifftop viewpoint with uneven terrain and limited infrastructure near the edge.,llm knowledge
-Malta,"Three Cities (Vittoriosa, Senglea, Cospicua)",True,TOUGH,TOUGH,TOUGH,LOW,"Historic waterfront areas with steep streets, stairs, and narrow passages typical of old harbor towns.",llm knowledge
+city,place,is_famous,wheelchair,toddler,senior,confidence,note,source,lat,lng
+Malta,Valletta,True,TOUGH,TOUGH,TOUGH,LOW,"UNESCO site with steep narrow streets, many stairs, and uneven cobblestones throughout the historic center.",llm knowledge,35.8989979,14.5136607
+Malta,Mdina,True,TOUGH,TOUGH,TOUGH,LOW,"Medieval walled city with narrow winding streets, steps, and very limited wheelchair access in the old town.",llm knowledge,35.8858923,14.4025288
+Malta,Popeye Village,True,GOOD,GOOD,GOOD,LOW,Purpose-built theme park with mostly level pathways and accessible facilities throughout.,llm knowledge,35.9608373,14.3406840
+Malta,Hypogeum of Hal-Saflieni,True,FAIL,FAIL,FAIL,LOW,"Underground prehistoric temple with narrow passages, stairs, and no wheelchair access; timed tours only.",llm knowledge,,
+Malta,St. John's Co-Cathedral,True,GOOD,GOOD,GOOD,LOW,Valletta cathedral with step-free entry via ramp and accessible interior layout.,llm knowledge,35.8976958,14.5126286
+Malta,Comino & Blue Lagoon,True,TOUGH,TOUGH,TOUGH,LOW,Beach destination requiring boat access and sandy/rocky terrain with limited facilities.,llm knowledge,36.0118868,14.3369304
+Malta,Fort St. Elmo,True,TOUGH,TOUGH,TOUGH,LOW,"Historic fortification with multiple levels, stairs, and uneven surfaces; partial wheelchair access only.",llm knowledge,35.9019840,14.5188059
+Malta,National Museum of Archaeology,True,GOOD,GOOD,GOOD,LOW,"Modern museum in Valletta with elevators, accessible galleries, and accessible facilities.",llm knowledge,35.8975379,14.5111952
+Malta,Dingli Cliffs,True,UNKNOWN,TOUGH,TOUGH,LOW,Scenic clifftop viewpoint with uneven terrain and limited infrastructure near the edge.,llm knowledge,35.8404196,14.4097163
+Malta,"Three Cities (Vittoriosa, Senglea, Cospicua)",True,TOUGH,TOUGH,TOUGH,LOW,"Historic waterfront areas with steep streets, stairs, and narrow passages typical of old harbor towns.",llm knowledge,35.8804593,14.5178963

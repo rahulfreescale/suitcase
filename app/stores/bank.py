@@ -98,14 +98,21 @@ def list_places(city: str) -> list:
     rows = _load_city(city)
     out = []
     for r in rows:
-        out.append({
+        item = {
             "city": r.get("city") or city,
             "name": r.get("place"),
             "is_famous": str(r.get("is_famous", "")).strip().lower() in ("true", "1", "yes"),
             "text": (r.get("note") or "").strip(),   # bank note as description
             "section_hint": None,
             "from_bank": True,
-        })
+        }
+        lat, lng = (r.get("lat") or "").strip(), (r.get("lng") or "").strip()
+        if lat and lng:
+            try:
+                item["lat"], item["lng"] = float(lat), float(lng)
+            except ValueError:
+                pass
+        out.append(item)
     return out
 
 
