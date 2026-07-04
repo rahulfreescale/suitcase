@@ -1,0 +1,12 @@
+city,place,is_famous,wheelchair,toddler,senior,confidence,note,source
+Berlin,Brandenburg Gate,True,EXCELLENT,EXCELLENT,EXCELLENT,HIGH,Stands on a large flat pedestrian square (Pariser Platz) with smooth paving; fully step-free to approach and photograph. Easy for everyone.,VisitBerlin; firsthand
+Berlin,Reichstag dome,True,GOOD,GOOD,GOOD,HIGH,Free to visit with a lift to the roof terrace and an accessible ramp spiralling up inside the glass dome; pre-registration required. Fully wheelchair accessible.,Bundestag access; wheelchairtravel.org
+Berlin,Museum Island (Pergamon/Neues),True,GOOD,GOOD,GOOD,HIGH,The museums have lifts and accessible entrances with free disabled entry; some are under renovation. The island's approaches have a few cobbles but routes are step-free.,SMB access
+Berlin,East Side Gallery,True,GOOD,GOOD,GOOD,HIGH,"A flat, open-air 1.3km stretch of the Wall along a paved riverside path; entirely step-free and easy to wheel or push along.",VisitBerlin; firsthand
+Berlin,Memorial to the Murdered Jews of Europe,True,GOOD,TOUGH,GOOD,HIGH,The field of stelae has an undulating stone-paved ground that is step-free but gently uneven; the underground information centre is fully accessible by lift. Free.,Stiftung Denkmal access
+Berlin,Tiergarten,False,EXCELLENT,EXCELLENT,EXCELLENT,HIGH,"Enormous flat central park with paved and firm paths, benches and cafes; excellent for strollers, wheelchairs and a slow senior stroll.",firsthand
+Berlin,Berlin TV Tower (Fernsehturm),True,GOOD,GOOD,GOOD,MEDIUM,"A lift carries visitors to the observation deck; the deck and bar are accessible, though space is limited at peak times. Book ahead.",TV Tower access
+Berlin,Charlottenburg Palace,True,TOUGH,GOOD,TOUGH,MEDIUM,Ground-floor State Rooms have an accessible route but upper floors and some historic rooms have stairs; the gardens are flat and easy. Partly accessible.,SPSG access
+Berlin,Checkpoint Charlie,True,GOOD,GOOD,GOOD,MEDIUM,"An open, flat street-level site; easy to reach and view, though touristy and crowded. The associated museum has some stairs.",firsthand
+Berlin,Gendarmenmarkt,False,GOOD,GOOD,GOOD,MEDIUM,"A grand flat square with smooth paving between the two cathedrals and concert hall; step-free to cross and enjoy, some steps up to the buildings.",firsthand
+Berlin,Berlin Zoo,False,GOOD,EXCELLENT,GOOD,MEDIUM,"Largely flat paved paths throughout with accessible toilets and rentable wheelchairs; a classic easy family day, a few gentle slopes.",Zoo Berlin access

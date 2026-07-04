@@ -1,0 +1,11 @@
+city,place,is_famous,wheelchair,toddler,senior,confidence,note,source
+Noida,"Lotus Temple (Delhi, nearby)",True,EXCELLENT,EXCELLENT,EXCELLENT,LOW,"Fully accessible with ramps, elevators, and accessible restrooms throughout the complex.",llm knowledge
+Noida,"Akshardham Temple (Delhi, nearby)",True,GOOD,GOOD,GOOD,LOW,"Mostly accessible with ramps and elevators, though some interior temple areas have steps.",llm knowledge
+Noida,DND Flyway & Yamuna Expressway,True,UNKNOWN,UNKNOWN,UNKNOWN,LOW,Major transport corridors; accessibility varies by specific rest stops and facilities.,llm knowledge
+Noida,Noida City Centre Mall,True,EXCELLENT,EXCELLENT,EXCELLENT,LOW,"Modern shopping mall with full wheelchair access, elevators, accessible parking, and facilities.",llm knowledge
+Noida,Surajkund Lake (nearby Faridabad),True,TOUGH,TOUGH,TOUGH,LOW,Natural lake with uneven terrain and limited paved pathways; challenging for mobility devices.,llm knowledge
+Noida,"Okhla Bird Sanctuary (Delhi, nearby)",True,TOUGH,TOUGH,TOUGH,LOW,"Natural wetland reserve with narrow, unpaved walking trails unsuitable for wheelchairs.",llm knowledge
+Noida,Noida Stadium,True,GOOD,GOOD,GOOD,LOW,Sports venue with designated accessible seating and ramp access to main areas.,llm knowledge
+Noida,Worlds of Wonder (Amusement Park),True,GOOD,GOOD,TOUGH,LOW,"Theme park with accessible pathways and some rides, though terrain is uneven in places.",llm knowledge
+Noida,Noida Golf Course,True,TOUGH,TOUGH,TOUGH,LOW,Open grounds with natural terrain; limited paved access and challenging for mobility devices.,llm knowledge
+Noida,Sector 62 Market & Commercial Hub,True,GOOD,GOOD,GOOD,LOW,"Modern commercial area with paved walkways, ramps, and accessible shops and restaurants.",llm knowledge

@@ -1,0 +1,12 @@
+city,place,is_famous,wheelchair,toddler,senior,confidence,note,source
+Chicago,Millennium Park & Cloud Gate ('The Bean'),True,EXCELLENT,EXCELLENT,EXCELLENT,HIGH,"Flat, paved, fully step-free park with ramped access throughout; The Bean sits on smooth level ground. Accessible toilets nearby. Easy and free.",Chicago Park District access; firsthand
+Chicago,Art Institute of Chicago,True,EXCELLENT,EXCELLENT,GOOD,HIGH,"Fully accessible with lifts to all levels, step-free entrances, loaner wheelchairs and accessible toilets. Flat galleries. One of the easiest big museums.",Art Institute access
+Chicago,Chicago Riverwalk,False,EXCELLENT,EXCELLENT,GOOD,HIGH,"A flat, continuous, step-free paved path along the river with ramped/elevator access from street level; great for strollers and wheelchairs.",Chicago Riverwalk access
+Chicago,Willis Tower Skydeck,True,GOOD,GOOD,GOOD,MEDIUM,Lifts to the 103rd-floor deck; the deck is accessible though the glass 'Ledge' boxes have a small lip. Very busy; book timed entry.,Skydeck access
+Chicago,Navy Pier,True,GOOD,EXCELLENT,GOOD,MEDIUM,"Flat, fully accessible pier with ramps, lifts and step-free attractions including an accessible Ferris wheel gondola; easy and family-friendly.",Navy Pier access
+Chicago,Lakefront Trail,False,GOOD,EXCELLENT,GOOD,HIGH,"An 18-mile flat, paved lakeshore path; entirely step-free and smooth, ideal for wheeling and strolling with lake views.",firsthand
+Chicago,Field Museum,True,EXCELLENT,EXCELLENT,GOOD,MEDIUM,"Fully accessible with lifts, ramps at the entrance, loaner wheelchairs and step-free galleries. Large but level.",Field Museum access
+Chicago,360 Chicago (Hancock),True,GOOD,GOOD,GOOD,MEDIUM,"Lift to the 94th-floor observation deck which is accessible; the tilting 'Tilt' feature is not, but views are step-free. Book ahead.",360 Chicago access
+Chicago,Magnificent Mile,False,GOOD,GOOD,GOOD,MEDIUM,"Wide, flat, smooth sidewalks the length of the shopping avenue; fully step-free and easy though busy.",firsthand
+Chicago,Garfield Park Conservatory,False,GOOD,EXCELLENT,GOOD,LOW,"A large flat glasshouse with step-free paved paths throughout and free entry; easy and lovely, a little out from downtown.",Garfield Park access
+Chicago,Wrigley Field,True,TOUGH,GOOD,TOUGH,LOW,"The historic ballpark has accessible seating and entrances but the century-old structure has ramps, tight concourses and some stairs to certain areas. Accessible seats need advance booking.",Cubs access guide

@@ -1,0 +1,12 @@
+city,place,is_famous,wheelchair,toddler,senior,confidence,note,source
+Madrid,Museo del Prado,True,GOOD,GOOD,GOOD,HIGH,"Fully accessible with lifts, step-free entrance, free disabled entry plus companion and loaner wheelchairs. Flat galleries; large but navigable.",Museo del Prado access; wheeltheworld
+Madrid,Reina Sofía (Guernica),True,GOOD,GOOD,GOOD,HIGH,"Modern museum with glass lifts to all floors, accessible entrance and free disabled entry. Step-free throughout.",Reina Sofía access
+Madrid,Retiro Park,True,GOOD,EXCELLENT,GOOD,HIGH,"Large park with wide paved and firm paths, the accessible Crystal Palace and boating lake; some gravel and gentle slopes but broadly easy for strollers and wheels.",Ayuntamiento de Madrid; firsthand
+Madrid,Royal Palace of Madrid,True,TOUGH,GOOD,TOUGH,MEDIUM,"An accessible route with lifts covers the main State Rooms, but there are some steps and the grand staircase; the courtyard is cobbled. Partly accessible — call ahead.",Patrimonio Nacional access
+Madrid,Plaza Mayor,True,TOUGH,GOOD,TOUGH,MEDIUM,The grand arcaded square is reached through stepped archways though ramped entrances exist; the interior is flat but cobbled. Manageable via the level access points.,firsthand
+Madrid,Puerta del Sol,True,GOOD,GOOD,GOOD,MEDIUM,"Central, mostly flat and recently repaved pedestrian plaza; step-free and easy though always crowded.",firsthand
+Madrid,Temple of Debod,True,GOOD,GOOD,TOUGH,MEDIUM,"The Egyptian temple sits in a flat park with paved approaches and famous sunsets; the immediate surrounds are step-free, with a gentle rise up to it.",firsthand
+Madrid,Mercado de San Miguel,True,TOUGH,TOUGH,TOUGH,MEDIUM,A historic covered market at street level but extremely crowded and tight between stalls; wheeling or a stroller is difficult at busy times. Quieter early.,firsthand
+Madrid,Thyssen-Bornemisza Museum,True,GOOD,GOOD,GOOD,MEDIUM,Accessible entrance and lifts to all floors with free disabled entry; step-free and calmer than the Prado.,Thyssen access
+Madrid,Gran Vía,False,GOOD,GOOD,GOOD,MEDIUM,"Madrid's grand avenue has wide, smooth, flat pavements ideal for strolling, shopping and theatre; easy for wheels and strollers though busy.",firsthand
+Madrid,Plaza de España,False,GOOD,EXCELLENT,GOOD,MEDIUM,"Recently redesigned flat, green, step-free plaza with smooth paths and shade; easy and pleasant for families and seniors.",Ayuntamiento de Madrid

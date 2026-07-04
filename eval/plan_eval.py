@@ -9,6 +9,8 @@ that, per scenario, with pass/fail assertions:
   C2  every SKIPPED place has a non-empty, grounded reason      (honest refusal)
   C3  every rating carries a basis + citation (not invented)    (grounding)
   C4  the detected constraints match what was asked             (comprehension)
+  C5  a skipped reason speaks to the ACTIVE constraint, not     (reason fidelity)
+      borrowed wording from another (e.g. no "wheelchair" on a toddler trip)
 
 Run:  python -m eval.plan_eval
 Exit code is non-zero if any scenario fails, so it can gate CI.
@@ -54,6 +56,18 @@ SCENARIOS = [
         "request": "plan a 2 day trip with a wheelchair",
         "hard": None, "must_detect": [], "expect_refused": [],
         "expect_clarify": True,   # no destination -> must ask for the city
+    },
+    {
+        "name": "Santa Cruz · toddler (reason-leak regression)",
+        "request": "2 days in Santa Cruz with a toddler",
+        "hard": None,
+        "must_detect": ["toddler"],
+        "expect_refused": [],
+        # The verdicts here are correctly TOUGH (stairs/unpaved = hard with a
+        # stroller), but the REASON text must speak to the toddler, not borrow
+        # wheelchair wording from the underlying bank note. A reason shown for a
+        # non-wheelchair trip must not mention "wheelchair".
+        "reason_must_exclude": ["wheelchair"],
     },
 ]
 
@@ -144,6 +158,19 @@ def check(scenario: dict) -> list[str]:
     for need in scenario["must_detect"]:
         if need.lower() not in detected:
             fails.append(f"C4 VIOLATION: expected to detect '{need}', got {detected}")
+
+    # C5 — a skipped reason must speak to the ACTIVE constraint, not borrow wording
+    # from a different one. E.g. a toddler trip's reasons must not cite "wheelchair"
+    # (which the underlying bank note is often phrased around). This guards the
+    # reason-leak class of bug, not just this one city.
+    for term in scenario.get("reason_must_exclude", []):
+        for s in skipped:
+            reason = (s.get("reason") or "").lower()
+            if term.lower() in reason:
+                fails.append(
+                    f"C5 VIOLATION: skipped '{s.get('name_hint')}' reason leaks "
+                    f"'{term}' on a trip that didn't ask for it: \"{s.get('reason')}\""
+                )
 
     return fails
 

@@ -61,17 +61,86 @@ def _fail_reason(rated: dict) -> str:
                      "UNKNOWN": "Not enough accessibility info to place confidently."
                     }.get(v.get("label"), "Limited fit for this trip.")
 
-    # 1. a hard FAIL is the most decisive reason
-    hard_fails = [(k, v) for k, v in per.items() if v.get("hard") and v["label"] == "FAIL"]
-    if hard_fails:
-        return _text(hard_fails[0][1])
-    # 2. a hard constraint (wheelchair/budget) that isn't a clear pass owns the reason
-    for k in ("wheelchair", "budget"):
-        v = per.get(k)
-        if v and v["label"] in ("FAIL", "TOUGH", "UNKNOWN"):
-            return _text(v)
-    # 3. otherwise the lowest-scoring constraint
-    return _text(min(per.items(), key=lambda kv: kv[1]["score"])[1])
+    # Pick the constraint that owns the reason, and remember WHICH one it is so we
+    # can sanitize borrowed wording below.
+    def _pick():
+        # 1. a hard FAIL is the most decisive reason
+        hard_fails = [(k, v) for k, v in per.items() if v.get("hard") and v["label"] == "FAIL"]
+        if hard_fails:
+            return hard_fails[0]
+        # 2. any ACTIVE hard constraint that isn't a clear pass owns the reason. We key
+        # off v["hard"] (present only for constraints the traveler actually requested)
+        # rather than a fixed wheelchair/budget list - otherwise a toddler-only trip
+        # would still surface a wheelchair reason. Lowest-scoring hard constraint wins.
+        hard_soft = [(k, v) for k, v in per.items()
+                     if v.get("hard") and v["label"] in ("FAIL", "TOUGH", "UNKNOWN")]
+        if hard_soft:
+            return min(hard_soft, key=lambda kv: kv[1]["score"])
+        # 3. otherwise the lowest-scoring constraint (of whatever IS active)
+        return min(per.items(), key=lambda kv: kv[1]["score"])
+
+    key, v = _pick()
+    return _sanitize_reason(_text(v), key, per)
+
+
+# Wording that describes wheelchair access specifically. When a reason is chosen
+# for a NON-wheelchair constraint (toddler/senior) but the underlying note/citation
+# was written in wheelchair terms - common because bank notes and guide prose phrase
+# accessibility around wheelchairs - we rewrite it to the obstacle that actually
+# matters for that traveler. This is a deterministic backstop that works no matter
+# where the text came from (bank note, lazy-build, or LLM prose).
+_WHEELCHAIR_PHRASES = [
+    "limited wheelchair accessibility to main buildings",
+    "limited wheelchair accessibility in main shopping area",
+    "limited wheelchair accessibility",
+    "not wheelchair accessible",
+    "no wheelchair access",
+    "wheelchair accessibility is limited",
+    "wheelchair access is limited",
+    "difficult for wheelchairs",
+    "hard for wheelchairs",
+    "not accessible for wheelchairs",
+    "wheelchair users",
+    "for wheelchair users",
+    "in a wheelchair",
+]
+
+def _sanitize_reason(text: str, chosen_key: str, per: dict) -> str:
+    """Strip wheelchair-specific wording from a reason chosen for a non-wheelchair need.
+
+    We only touch the text when (a) the reason was NOT chosen for the wheelchair
+    constraint and (b) wheelchair is not even an active constraint for this trip -
+    so we never alter a legitimate wheelchair reason. The verdict (TOUGH/FAIL) and
+    the concrete obstacles (stairs, unpaved paths, uneven terrain) are preserved;
+    only the trailing wheelchair clause is removed or, if nothing else remains, a
+    need-appropriate fallback is used.
+    """
+    if chosen_key == "wheelchair" or "wheelchair" in per:
+        return text
+    if not text or "wheelchair" not in text.lower():
+        return text
+
+    cleaned = text
+    for phrase in _WHEELCHAIR_PHRASES:
+        # remove the phrase and a leading connector like "; " or ", " if present
+        for connector in ("; ", ", ", " - ", ". ", " "):
+            cleaned = cleaned.replace(connector + phrase, "")
+            cleaned = cleaned.replace(connector + phrase.capitalize(), "")
+        cleaned = cleaned.replace(phrase, "")
+        cleaned = cleaned.replace(phrase.capitalize(), "")
+    # tidy leftover punctuation/space
+    cleaned = cleaned.strip().strip(";,").strip()
+    if cleaned and not cleaned.endswith("."):
+        cleaned += "."
+
+    # If we stripped everything meaningful, fall back to a need-appropriate line.
+    if len(cleaned) < 15:
+        if chosen_key == "toddler-friendly":
+            return "Stairs and uneven or unpaved terrain make it difficult with a stroller."
+        if chosen_key == "senior-friendly":
+            return "Stairs, steep or uneven terrain and long walking make it tiring."
+        return "Doable but difficult given the constraints."
+    return cleaned
 
 
 def assemble_itinerary(rated_activities: list[dict], contract: dict) -> dict:

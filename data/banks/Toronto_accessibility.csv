@@ -1,0 +1,12 @@
+city,place,is_famous,wheelchair,toddler,senior,confidence,note,source
+Toronto,CN Tower,True,GOOD,GOOD,GOOD,HIGH,High-speed lifts to the accessible main observation deck and glass floor; the EdgeWalk is not accessible but the decks are. Book timed entry.,CN Tower access
+Toronto,Royal Ontario Museum (ROM),True,EXCELLENT,EXCELLENT,GOOD,HIGH,"Fully accessible with lifts, step-free entrance, loaner wheelchairs and accessible toilets. Flat galleries throughout.",ROM access
+Toronto,Toronto Islands ferry,True,GOOD,EXCELLENT,GOOD,HIGH,The ferries have step-free/ramped boarding and the island paths are flat and paved; beaches and parkland with accessible routes. A relaxed accessible day trip.,City of Toronto access; firsthand
+Toronto,Art Gallery of Ontario (AGO),True,EXCELLENT,EXCELLENT,GOOD,MEDIUM,"Step-free entrances, lifts to all levels, loaner wheelchairs; the Gehry-designed galleries are flat and easy.",AGO access
+Toronto,St. Lawrence Market,True,GOOD,GOOD,GOOD,MEDIUM,The main market is largely at ground level with lift access between floors; aisles are navigable though busy on Saturdays. Accessible with care.,St. Lawrence Market access
+Toronto,Distillery District,True,TOUGH,TOUGH,TOUGH,MEDIUM,A pedestrian Victorian district paved in historic cobblestones that are charming but jarring and uneven for wheels and strollers; shops and cafes are mostly step-free once inside.,firsthand
+Toronto,Harbourfront / waterfront trail,False,EXCELLENT,EXCELLENT,GOOD,HIGH,"A flat, paved, step-free lakeside promenade with ramps and accessible facilities; easy and scenic for strolling and wheeling.",firsthand
+Toronto,Ripley's Aquarium,True,EXCELLENT,EXCELLENT,GOOD,MEDIUM,"Fully accessible with flat step-free galleries, ramps and a moving walkway through the tunnel; excellent for families and wheelchairs.",Ripley's access
+Toronto,Kensington Market,False,GOOD,GOOD,GOOD,MEDIUM,"A flat, walkable bohemian neighborhood; sidewalks and streets are largely step-free though narrow and busy, and some shops have a step. Broadly manageable.",firsthand
+Toronto,Casa Loma,True,TOUGH,GOOD,TOUGH,MEDIUM,A hilltop Gothic mansion; the main floor has an accessible entrance and route but the towers and some levels are stair-only and the grounds are sloped. Partly accessible.,Casa Loma access
+Toronto,High Park,False,GOOD,EXCELLENT,GOOD,LOW,"A large park with many flat paved paths, accessible facilities and a zoo, though some trails are hilly and unpaved. Choose the paved routes for easy access.",City of Toronto access

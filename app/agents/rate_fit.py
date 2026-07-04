@@ -146,8 +146,15 @@ Use ONLY the guide text provided. Return ONLY JSON.
 
 Rules:
 - For each soft need, choose EXACTLY one label: EXCELLENT, GOOD, TOUGH, FAIL.
-- You MUST quote the guide sentence you based each rating on, in "citation".
-  If the guide text says nothing relevant to a need, use label "TOUGH" and
+- The "citation" must explain the rating IN TERMS OF THAT SPECIFIC NEED, grounded
+  in the guide text. Translate the guide's facts into what matters for the need:
+  * toddler-friendly / stroller: talk about stairs, steep or unpaved paths, uneven
+    ground, narrow crowded lanes, stroller access - NOT wheelchair wording.
+  * senior-friendly: talk about long walking, stairs, steep climbs, seating, pace.
+  Do NOT quote a wheelchair-specific sentence as the reason for a toddler or senior
+  need; describe the underlying obstacle (e.g. "steep stairs and unpaved paths make
+  it hard with a stroller") using the guide's facts.
+- If the guide text says nothing relevant to a need, use label "TOUGH" and
   citation "no relevant info".
 - These HARD results are already LOCKED by data and you must NOT contradict or
   re-rate them: {locked}
