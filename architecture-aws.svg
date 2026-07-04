@@ -1,0 +1,130 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="760" viewBox="0 0 920 760" font-family="'Archivo','Helvetica Neue',system-ui,sans-serif">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M1 1L9 5L1 9" fill="none" stroke="#1B2A4A" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+    <style>
+      .eyebrow{font-size:10px;letter-spacing:.18em;text-transform:uppercase;fill:#9a8f7d;font-weight:700;font-family:'JetBrains Mono',monospace}
+      .title{font-size:15px;font-weight:700;fill:#1B2A4A}
+      .sub{font-size:11.5px;fill:#6b6456}
+      .tag{font-size:9px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;font-family:'JetBrains Mono',monospace}
+      .wire{fill:none;stroke:#c9c0ad;stroke-width:1.5}
+      .flow{font-size:9.5px;fill:#9a8f7d;font-family:'JetBrains Mono',monospace;letter-spacing:.05em}
+    </style>
+  </defs>
+
+  <rect width="920" height="760" fill="#F3EDE1"/>
+
+  <!-- boarding-pass top perforation strip -->
+  <g fill="#D8452B">
+    <rect x="60" y="40" width="800" height="8" rx="2"/>
+  </g>
+  <text x="60" y="86" font-size="24" font-weight="800" fill="#1B2A4A">Suitcase — cloud architecture</text>
+  <text x="60" y="108" class="sub" font-size="12.5">Agentic-RAG trip planner · provisioned by Terraform · one command up / down</text>
+
+  <!-- ============ TIER 1: entry (user + cognito side by side) ============ -->
+  <text x="60" y="150" class="eyebrow">Entry</text>
+
+  <rect x="60" y="162" width="360" height="66" rx="12" fill="#fff" stroke="#c9c0ad" stroke-width="1.2"/>
+  <text x="82" y="190" class="title">Browser</text>
+  <text x="82" y="210" class="sub">the person planning a trip</text>
+
+  <rect x="460" y="162" width="400" height="66" rx="12" fill="#efe6f3" stroke="#7a5aa8" stroke-width="1.2"/>
+  <text x="482" y="190" class="title" fill="#4a3670">Amazon Cognito</text>
+  <text x="482" y="210" class="sub" fill="#6b5a86">hosted login · issues a signed token (JWT)</text>
+  <text x="836" y="184" class="tag" fill="#7a5aa8" text-anchor="end">AUTH</text>
+
+  <!-- browser <-> cognito : login/token, horizontal, clean -->
+  <path class="wire" d="M420 188 L456 188" marker-end="url(#a)" stroke="#7a5aa8"/>
+  <path class="wire" d="M456 202 L420 202" marker-end="url(#a)" stroke="#7a5aa8" stroke-dasharray="4 3"/>
+  <text x="438" y="180" class="flow" fill="#7a5aa8" text-anchor="middle">log in</text>
+  <text x="438" y="222" class="flow" fill="#7a5aa8" text-anchor="middle">token</text>
+
+  <!-- straight down: browser -> ALB -->
+  <path class="wire" d="M240 228 L240 268" marker-end="url(#a)"/>
+  <text x="252" y="252" class="flow">request + token</text>
+
+  <!-- ============ TIER 2: edge (ALB) ============ -->
+  <text x="60" y="292" class="eyebrow">Edge · inside the VPC</text>
+  <rect x="60" y="304" width="800" height="380" rx="16" fill="#ece5d6" stroke="#c9c0ad" stroke-width="1.4"/>
+
+  <rect x="140" y="326" width="200" height="60" rx="10" fill="#f6ddd2" stroke="#D8452B" stroke-width="1.2"/>
+  <text x="240" y="352" class="title" fill="#9c3420" text-anchor="middle">Load balancer</text>
+  <text x="240" y="371" class="sub" fill="#a5533a" text-anchor="middle">public URL · routes traffic</text>
+
+  <!-- ALB -> API -->
+  <path class="wire" d="M240 386 L240 424" marker-end="url(#a)"/>
+
+  <!-- ============ TIER 3: compute (API + Worker) ============ -->
+  <rect x="140" y="424" width="240" height="76" rx="10" fill="#dcebe0" stroke="#3f7d53" stroke-width="1.3"/>
+  <text x="260" y="450" class="title" fill="#2c5a3c" text-anchor="middle">API · Fargate</text>
+  <text x="260" y="469" class="sub" fill="#3f7d53" text-anchor="middle">FastAPI · verifies the token</text>
+  <text x="260" y="486" class="sub" fill="#3f7d53" text-anchor="middle">/plan · /ask · /health</text>
+
+  <rect x="560" y="424" width="240" height="76" rx="10" fill="#dcebe0" stroke="#3f7d53" stroke-width="1.3"/>
+  <text x="680" y="450" class="title" fill="#2c5a3c" text-anchor="middle">Workers · Fargate</text>
+  <text x="680" y="469" class="sub" fill="#3f7d53" text-anchor="middle">run the agent pipeline</text>
+  <text x="680" y="486" class="sub" fill="#3f7d53" text-anchor="middle">pull jobs off the queue</text>
+
+  <!-- API <-> queue <-> worker : clean horizontal via the queue block -->
+  <rect x="410" y="432" width="120" height="60" rx="10" fill="#f6ecd3" stroke="#b8862b" stroke-width="1.2"/>
+  <text x="470" y="456" class="title" fill="#8a6114" text-anchor="middle" font-size="13">Redis</text>
+  <text x="470" y="473" class="sub" fill="#b8862b" text-anchor="middle">queue +</text>
+  <text x="470" y="486" class="sub" fill="#b8862b" text-anchor="middle">memory</text>
+
+  <path class="wire" d="M380 452 L406 452" marker-end="url(#a)"/>
+  <text x="393" y="444" class="flow" text-anchor="middle">enqueue</text>
+  <path class="wire" d="M534 452 L556 452" marker-end="url(#a)"/>
+  <text x="545" y="444" class="flow" text-anchor="middle">dequeue</text>
+
+  <!-- API + worker straight down into stores -->
+  <path class="wire" d="M260 500 L260 556" marker-end="url(#a)"/>
+  <path class="wire" d="M680 500 L680 556" marker-end="url(#a)"/>
+
+  <!-- ============ TIER 4: managed data stores (one clean row) ============ -->
+  <text x="140" y="540" class="eyebrow">Managed data stores</text>
+  <g>
+    <rect x="140" y="556" width="150" height="72" rx="10" fill="#e3eefb" stroke="#2f6ca5" stroke-width="1.1"/>
+    <text x="215" y="582" class="title" fill="#1e4f7d" text-anchor="middle" font-size="13.5">OpenSearch</text>
+    <text x="215" y="601" class="sub" fill="#2f6ca5" text-anchor="middle">vectors + cache</text>
+    <text x="215" y="616" class="sub" fill="#2f6ca5" text-anchor="middle">(retrieval)</text>
+
+    <rect x="302" y="556" width="150" height="72" rx="10" fill="#e3eefb" stroke="#2f6ca5" stroke-width="1.1"/>
+    <text x="377" y="582" class="title" fill="#1e4f7d" text-anchor="middle" font-size="13.5">DynamoDB</text>
+    <text x="377" y="601" class="sub" fill="#2f6ca5" text-anchor="middle">trail + state</text>
+
+    <rect x="558" y="556" width="150" height="72" rx="10" fill="#e3eefb" stroke="#2f6ca5" stroke-width="1.1"/>
+    <text x="633" y="582" class="title" fill="#1e4f7d" text-anchor="middle" font-size="13.5">RDS Postgres</text>
+    <text x="633" y="601" class="sub" fill="#2f6ca5" text-anchor="middle">structured +</text>
+    <text x="633" y="616" class="sub" fill="#2f6ca5" text-anchor="middle">checkpointer</text>
+
+    <rect x="720" y="556" width="80" height="72" rx="10" fill="#e3eefb" stroke="#2f6ca5" stroke-width="1.1"/>
+    <text x="760" y="588" class="title" fill="#1e4f7d" text-anchor="middle" font-size="13.5">S3</text>
+    <text x="760" y="607" class="sub" fill="#2f6ca5" text-anchor="middle">data lake</text>
+  </g>
+
+  <!-- secrets + budget as small side notes at bottom of VPC -->
+  <rect x="140" y="644" width="320" height="30" rx="7" fill="#fff" stroke="#c9c0ad" stroke-width="1"/>
+  <text x="156" y="663" class="sub" font-size="10.5"><tspan font-weight="700" fill="#1B2A4A">Secrets Manager</tspan> — API keys, injected at runtime</text>
+  <rect x="480" y="644" width="320" height="30" rx="7" fill="#fff" stroke="#c9c0ad" stroke-width="1"/>
+  <text x="496" y="663" class="sub" font-size="10.5"><tspan font-weight="700" fill="#1B2A4A">Budget alarm</tspan> — emails at 50% / 90% of cap</text>
+
+  <!-- ============ external SaaS (right column, outside VPC) ============ -->
+  <text x="60" y="716" class="eyebrow">External SaaS · called over the internet</text>
+  <rect x="60" y="726" width="250" height="26" rx="6" fill="#f6ddd2" stroke="#D8452B" stroke-width="1"/>
+  <text x="76" y="743" class="sub" font-size="10.5"><tspan font-weight="700" fill="#9c3420">LLM APIs</tspan> — Anthropic · OpenAI</text>
+  <rect x="330" y="726" width="270" height="26" rx="6" fill="#efe6f3" stroke="#7a5aa8" stroke-width="1"/>
+  <text x="346" y="743" class="sub" font-size="10.5"><tspan font-weight="700" fill="#4a3670">Langfuse</tspan> — request tracing (cost · latency)</text>
+
+  <!-- legend -->
+  <g transform="translate(620,712)">
+    <rect x="0" y="4" width="12" height="12" rx="3" fill="#dcebe0" stroke="#3f7d53"/>
+    <text x="18" y="14" class="sub" font-size="10">your code</text>
+    <rect x="90" y="4" width="12" height="12" rx="3" fill="#e3eefb" stroke="#2f6ca5"/>
+    <text x="108" y="14" class="sub" font-size="10">AWS store</text>
+    <rect x="0" y="26" width="12" height="12" rx="3" fill="#efe6f3" stroke="#7a5aa8"/>
+    <text x="18" y="36" class="sub" font-size="10">auth / tracing</text>
+    <rect x="90" y="26" width="12" height="12" rx="3" fill="#f6ecd3" stroke="#b8862b"/>
+    <text x="108" y="36" class="sub" font-size="10">Redis queue</text>
+  </g>
+</svg>
