@@ -65,9 +65,13 @@ https://github.com/user-attachments/assets/REPLACE_BY_DRAGGING_demo.mp4_HERE
 
 ## 📸 Screenshots
 
-![The planner in action](docs/images/productmap.png)
+**Chatting your way to a plan** — you describe the trip in plain language and the agent asks only what it needs.
 
-*The planner in action — a day-by-day itinerary with accessible stops, the interactive map, and the popular spots left out with the reason for each.*
+![Chat conversation](docs/images/chat.png)
+
+**The finished plan** — a day-by-day itinerary with accessible stops rated on evidence, an interactive map, and the popular spots left out with the reason for each.
+
+![The planner in action](docs/images/productmap.png)
 
 ---
 
