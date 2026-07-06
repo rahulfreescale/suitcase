@@ -51,31 +51,23 @@ You tell it what you need:
 ## 🎥 Demo
 
 <!--
-  TO ADD YOUR DEMO VIDEO:
-  Option A (recommended) — drag-and-drop an .mp4 into this file while editing on github.com.
-    GitHub uploads it and inserts a playable link automatically. Delete this comment and the line below.
-  Option B — a short GIF: put it in docs/images/ and use the image syntax:
-    ![Demo](docs/images/demo.gif)
-  Option C — thumbnail linking to YouTube/Loom:
-    [![Watch the demo](docs/images/demo-thumb.png)](https://youtu.be/YOUR_LINK)
+  DEMO VIDEO — GitHub markdown can't embed a local .mp4 with ![](...) syntax.
+  To make it play inline: edit this README on github.com, delete this line and the
+  placeholder below, then DRAG docs/images/demo.mp4 into the editor here. GitHub
+  uploads it and inserts a playable video link automatically.
 -->
 
-> **▶ Demo video goes here** — a full wheelchair-trip build, end to end (chat → live progress → finished itinerary with accessible stops, the "left out" list, and the day-by-day plan on a map).
+https://github.com/user-attachments/assets/REPLACE_BY_DRAGGING_demo.mp4_HERE
+
+> A full wheelchair-trip build, end to end: chat → live progress → finished itinerary with accessible stops, the "left out" list, and the day-by-day plan on a map.
 
 ---
 
 ## 📸 Screenshots
 
-<!--
-  Put your screenshots in docs/images/ and reference them below.
-  Replace each placeholder path with your actual file.
--->
+![The planner in action](docs/images/productmap.png)
 
-| Itinerary | Accessibility flags | Live progress |
-|---|---|---|
-| ![Itinerary](docs/images/itinerary.png) | ![Flags](docs/images/left-out.png) | ![Progress](docs/images/progress.png) |
-
-*A finished Rome itinerary — accessible stops rated with evidence, and the popular spots left out with the reason for each.*
+*The planner in action — a day-by-day itinerary with accessible stops, the interactive map, and the popular spots left out with the reason for each.*
 
 ---
 
@@ -96,8 +88,7 @@ You tell it what you need:
 
 The system is a **controlled workflow with three tool-calling agents** dropped in exactly where a decision can't be pre-scripted, running inside a containerized service on AWS.
 
-<!-- Put the combined diagram PNG in docs/images/ -->
-![System architecture](docs/images/combined_expanded.png)
+![System architecture on AWS](docs/images/productionaws.png)
 
 *The three-agent planning pipeline runs inside ECS Fargate, alongside the API and worker. Grounding data, memory, and structured stores sit behind it; everything is provisioned with Terraform.*
 
@@ -113,8 +104,7 @@ It's a multi-agent system — **mostly a deterministic workflow, with real agent
 
 **Verifier agent** — reads the finished plan, decides which risky claims are worth checking, and calls tools to verify them **before you ever see the output**.
 
-<!-- Put the agentic-flow diagram PNG in docs/images/ -->
-![Agentic flow](docs/images/agentic_flow.png)
+![Agentic flow](docs/images/agenticflow.png)
 
 ---
 
@@ -230,6 +220,10 @@ A full plan build is long-running (retrieval, multiple agents, several tool call
 ### Observability that closes the loop
 
 Every agent decision, tool call, cost, and latency is traced through **Langfuse**, with dashboards for cost and latency. This is what turns "it just hangs" into "I can see which call stalled" — and, because the same traces feed the live-traffic eval, observability and evaluation are wired into a single feedback loop rather than living in separate tools.
+
+![Langfuse trace](docs/images/langfuse.png)
+
+*A trace in Langfuse — each agent decision and tool call is a span, with cost and latency attached, so a stalled or misbehaving run is debuggable at a glance.*
 
 ## 🛠 Tech stack
 
