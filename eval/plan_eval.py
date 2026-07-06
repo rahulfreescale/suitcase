@@ -93,7 +93,7 @@ def _has_hard_fail(rated: dict, hard: str | None) -> bool:
 def check(scenario: dict) -> list[str]:
     """Return a list of failure strings (empty = passed)."""
     fails: list[str] = []
-    plan = plan_trip(scenario["request"], use_cache=False)
+    plan = plan_trip(scenario["request"], use_cache=False, with_meals=False)
 
     # --- graceful-handling expectations (bad/underspecified input) ---
     if scenario.get("expect_empty"):

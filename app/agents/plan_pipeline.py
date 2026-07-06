@@ -206,12 +206,23 @@ def _lazy_build_bank(city: str, user_id: str | None = None) -> None:
     if not rows:
         return
 
+    # Backfill coordinates so weather, air-quality and the map work for this
+    # lazily-built city (hand-researched banks already carry lat/lng; the lazy
+    # path historically didn't, which broke those features for new cities).
+    from app.tools import travel_data as _td
+    for r in rows:
+        if not r.get("lat") or not r.get("lng"):
+            coords = _td.geocode_place(r.get("place", ""), city)
+            if coords:
+                r["lat"], r["lng"] = coords[0], coords[1]
+
     bank_dir = Path("data/banks")
     bank_dir.mkdir(parents=True, exist_ok=True)
     path = bank_dir / f"{city.replace(' ', '_')}_accessibility.csv"
     with open(path, "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=["city", "place", "is_famous", "wheelchair",
-                                          "toddler", "senior", "confidence", "note", "source"])
+                                          "toddler", "senior", "confidence", "note",
+                                          "source", "lat", "lng"])
         w.writeheader(); w.writerows(rows)
     bank_store._load_city.cache_clear()  # so the new bank is picked up
 
@@ -301,11 +312,176 @@ def _bank_rows_from_llm_knowledge(city: str, user_id) -> list:
                      "confidence": "LOW",           # unverified -> softens, never hard-blocks
                      "note": (it.get("note") or "").strip(),
                      "source": "llm knowledge"})    # flagged as model-derived on first build
+
+    # ONBOARDING AGENT (true agent): upgrade the LLM's guessed ratings with REAL
+    # evidence. Geocode each candidate, then let the agent investigate via OSM
+    # tools and record evidence-based verdicts. Where it verifies a place, we
+    # replace the "llm knowledge / LOW" row with the agent's grounded rating.
+    try:
+        from app.tools import travel_data as _td
+        from app.agents.tool_agents import onboarding_agent
+        candidates = []
+        for r in rows:
+            coords = _td.geocode_place(r["place"], city)
+            if coords:
+                candidates.append({"name": r["place"], "lat": coords[0], "lng": coords[1]})
+        if candidates:
+            verdict = onboarding_agent(city, candidates, user_id=user_id)
+            by_name = {(v.get("place") or "").lower(): v
+                       for v in (verdict.get("ratings") or [])}
+            for r in rows:
+                v = by_name.get(r["place"].lower())
+                if v and (v.get("confidence") or "").upper() != "LOW":
+                    # agent verified this place with real evidence -> use its rating
+                    r["wheelchair"] = _lab(v.get("wheelchair", r["wheelchair"]))
+                    r["toddler"] = _lab(v.get("toddler", r["toddler"]))
+                    r["senior"] = _lab(v.get("senior", r["senior"]))
+                    r["confidence"] = (v.get("confidence") or "LOW").upper()
+                    r["note"] = (v.get("note") or r["note"]).strip()
+                    r["source"] = "onboarding agent (OSM-verified)"
+    except Exception as e:
+        print(f"[bank] onboarding agent skipped: {e}")
+
     return rows
 
 
 @observe(name="constraint_plan_pipeline")
-def plan_trip(request: str, user_id: str | None = None, use_cache: bool = True) -> dict:
+def _day_center(day: dict):
+    """Mean lat/lng of a day's placed stops, for a meal-search center."""
+    pts = []
+    for slot in ("morning", "afternoon", "evening"):
+        b = (day.get("blocks") or {}).get(slot)
+        if b and b.get("lat") is not None and b.get("lng") is not None:
+            pts.append((b["lat"], b["lng"]))
+    if not pts:
+        return None
+    return (sum(p[0] for p in pts) / len(pts), sum(p[1] for p in pts) / len(pts))
+
+
+def _meal_pick(places: list, kind_label: str):
+    """Shape a places-tool result into {best, alternatives} for one meal."""
+    out = []
+    for p in places:
+        bits = []
+        if p.get("cuisine"):
+            bits.append(p["cuisine"].replace(";", ", "))
+        access = p.get("access")
+        tag = {"yes": "step-free", "limited": "step-free (limited)",
+               "designated": "step-free"}.get(access, access or "")
+        out.append({"name": p["name"], "cuisine": p.get("cuisine"),
+                    "access": access, "access_label": tag,
+                    "address": p.get("address"),
+                    "changing_table": bool(p.get("changing_table")),
+                    "highchair": bool(p.get("highchair"))})
+    if not out:
+        return None
+    return {"meal": kind_label, "best": out[0], "alternatives": out[1:3]}
+
+
+def _enrich_meals(itinerary: dict, contract: dict, user_id=None) -> None:
+    """Attach lunch + dinner picks to each day, grounded in real accessible places
+    near that day's stops. Mutates itinerary in place. Fully network-guarded:
+    any failure just leaves meals off that day rather than breaking the plan.
+    """
+    try:
+        from app.tools import travel_data
+        from app.config import get_settings
+        if not get_settings().enable_places_tool:
+            return
+    except Exception:
+        return
+    # which access filter matches the traveler
+    constraint = "wheelchair"
+    travelers = contract.get("travelers") or []
+    if any((t or {}).get("type") == "toddler" for t in travelers):
+        constraint = "stroller"
+    if any((t or {}).get("mobility") == "wheelchair" for t in travelers):
+        constraint = "wheelchair"
+
+    # cuisines that aren't real lunch/dinner spots (dessert, coffee, snacks)
+    _NON_MEAL = {"ice_cream", "coffee_shop", "cafe", "dessert", "donut",
+                 "bubble_tea", "juice", "bakery"}
+    used_names = set()  # de-dupe across days
+
+    # trip-wide fallback center: mean of every day that DOES have coords, so a
+    # day whose single stop lacks a geocode still gets nearby meal suggestions.
+    all_centers = [c for c in (_day_center(d) for d in (itinerary.get("days") or [])) if c]
+    trip_center = None
+    if all_centers:
+        trip_center = (sum(c[0] for c in all_centers) / len(all_centers),
+                       sum(c[1] for c in all_centers) / len(all_centers))
+
+    def _is_meal(p):
+        cui = (p.get("cuisine") or "").lower()
+        return not any(nm in cui for nm in _NON_MEAL)
+
+    for day in (itinerary.get("days") or []):
+        center = _day_center(day) or trip_center
+        if not center:
+            continue
+        lat, lng = center
+        try:
+            # pull a wider set so we can filter to real meals + de-dupe
+            res = travel_data.accessible_places(lat, lng, kind="food",
+                                                constraint=constraint, limit=14)
+            places = res.get("places", [])
+        except Exception:
+            places = []
+        # prefer actual restaurants, drop dessert/coffee, drop already-used
+        meal_places = [p for p in places
+                       if p.get("amenity") == "restaurant" and _is_meal(p)
+                       and p["name"] not in used_names]
+        # if too few restaurants, allow other food places (still meal-appropriate)
+        if len(meal_places) < 4:
+            meal_places += [p for p in places
+                            if _is_meal(p) and p["name"] not in used_names
+                            and p not in meal_places]
+        meals = []
+        if meal_places:
+            lunch = _meal_pick(meal_places[:3], "Lunch")
+            dinner = _meal_pick(meal_places[3:6] or meal_places[:3], "Dinner")
+            if lunch:
+                meals.append(lunch)
+                used_names.update(a["name"] for a in
+                                  [lunch["best"]] + lunch.get("alternatives", []))
+            if dinner:
+                meals.append(dinner)
+                used_names.update(a["name"] for a in
+                                  [dinner["best"]] + dinner.get("alternatives", []))
+        elif res.get("kind") == "sparse":
+            day["meals_note"] = ("Few places here have verified accessible dining "
+                                 "data \u2014 ask your hotel or call ahead.")
+        day["meals"] = meals
+
+
+def _plan_grounding(rated: list) -> dict:
+    """Detect whether the plan is guide-grounded or LLM-knowledge (unverified).
+
+    Out-of-corpus cities fall back to model knowledge (source="llm knowledge",
+    confidence LOW). We surface that honestly so the UI can warn that access
+    details are unverified and coordinates may be approximate.
+    """
+    if not rated:
+        return {"level": "none", "note": None}
+    llm = 0; total = 0
+    for r in rated:
+        for c in (r.get("per_constraint") or {}).values():
+            total += 1
+            cite = (c.get("citation") or "")
+            basis = (c.get("basis") or "")
+            if "llm knowledge" in str(cite).lower() or basis in ("unknown",):
+                llm += 1
+    if total and llm / total > 0.6:
+        return {"level": "llm",
+                "note": ("Heads up: this city isn't in our vetted guide corpus yet, "
+                         "so accessibility details come from the model's general "
+                         "knowledge (unverified) and map pins may be approximate. "
+                         "Confirm step-free access directly before you rely on it.")}
+    return {"level": "guide", "note": None}
+
+
+def plan_trip(request: str, user_id: str | None = None, use_cache: bool = True,
+              with_meals: bool = True, progress=None) -> dict:
     """Full chain: request -> contract -> retrieve -> rate -> assemble.
 
     Returns {contract, chips, activities_rated, itinerary, needs_clarification,
@@ -322,14 +498,39 @@ def plan_trip(request: str, user_id: str | None = None, use_cache: bool = True) 
     # GUARD: the cache index is shared with /ask, and a raw k-NN lookup can return
     # the nearest *Q&A* answer for the same city (which has no itinerary). Only
     # accept a hit that is actually a plan result AND whose cached query was a plan.
+    # Build a CONSTRAINT-AWARE cache key. The semantic cache would otherwise
+    # fuzzy-match "Rome with a toddler" to a cached "Rome with a wheelchair" plan
+    # (same city, close embedding) and serve the wrong constraints. We append the
+    # distinctive constraint tokens found in the raw request so different-constraint
+    # trips get distinct keys.
+    import re as _re0
+    _ctoks = []
+    for _kw in ["wheelchair", "toddler", "stroller", "senior", "elderly",
+                "vegetarian", "vegan", "halal", "kosher", "gluten", "budget"]:
+        if _re0.search(rf"\b{_kw}", request, _re0.I):
+            _ctoks.append(_kw)
+    _cache_key = "plan::" + request + "::" + ",".join(sorted(_ctoks))
+
+    # If the trip has ANY access/dietary/budget constraint, skip the semantic
+    # cache entirely. The semantic cache matches on embedding similarity, which
+    # can't reliably tell "Rome with a toddler" from "Rome with a wheelchair" -
+    # so caching constraint trips risks serving the WRONG constraints. Constraint
+    # trips are the whole point of this product; correctness beats the cache here.
+    _has_constraints = bool(_ctoks)
+    if _has_constraints:
+        use_cache = False
+
     if use_cache:
         try:
             from app.stores.cache import lookup as _cache_lookup
-            _cached = _cache_lookup("plan::" + request)
+            _cached = _cache_lookup(_cache_key)
             _is_plan_hit = (
                 isinstance(_cached, dict)
                 and _cached.get("itinerary")
                 and (_cached.get("_cache", {}).get("cached_query", "")).startswith("plan::")
+                # the cached plan's constraint tokens must EXACTLY match this request's
+                and (_cached.get("_cache", {}).get("cached_query", "")).endswith(
+                    "::" + ",".join(sorted(_ctoks)))
             )
             if _is_plan_hit:
                 _cached["_cache_hit"] = True
@@ -338,6 +539,11 @@ def plan_trip(request: str, user_id: str | None = None, use_cache: bool = True) 
             pass
 
     # Phase 1: extract the contract (+ detected/suggested chips)
+    def _p(stage, label):
+        if progress:
+            try: progress(stage, label)
+            except Exception: pass
+    _p("extract", "Understanding your constraints")
     state = {"query": request, "thread_id": "plan"}
     ex = extract_requirements(state)
     contract = ex["constraints"]
@@ -411,6 +617,7 @@ def plan_trip(request: str, user_id: str | None = None, use_cache: bool = True) 
 
     bank_places = bank_store.list_places(contract.get("destination") or "")
 
+    _p("retrieve", "Finding accessible places")
     # supplement: retrieve + decompose, keep only places NOT already in the bank
     chunks = _retrieve_activities(contract)
     extracted = decompose_all(chunks, user_id=user_id)
@@ -447,6 +654,7 @@ def plan_trip(request: str, user_id: str | None = None, use_cache: bool = True) 
 
     # Phase 2: rate each activity against the contract (bank places rate from the
     # bank; supplemental places fall back to prose inside rate_activity)
+    _p("rate", "Checking each place against your needs")
     rated = [rate_activity(a, contract, user_id=user_id) for a in activities]
     # carry decomposition metadata (name, is_famous, section_hint) onto the rating
     for r, a in zip(rated, activities):
@@ -455,7 +663,15 @@ def plan_trip(request: str, user_id: str | None = None, use_cache: bool = True) 
         r["activity"]["section_hint"] = a.get("section_hint")
 
     # Phase 3: assemble into day plan + skipped + critique
+    _p("assemble", "Arranging your days")
     itinerary = assemble_itinerary(rated, contract)
+
+    # Phase 3.5: meal enrichment - attach lunch + dinner picks per day, grounded in
+    # real accessible places near that day's stops. Opt-in (off during eval) so the
+    # deterministic core stays fast; network-guarded so it never breaks a plan.
+    if with_meals:
+        _p("meals", "Adding nearby accessible dining")
+        _enrich_meals(itinerary, contract, user_id)
 
     # Empty-plan guard: if retrieval AND the lazy bank both found nothing real for
     # this destination, the plan comes back with 0 placed and 0 skipped. That's
@@ -492,13 +708,14 @@ def plan_trip(request: str, user_id: str | None = None, use_cache: bool = True) 
         "itinerary": itinerary,
         "empty_reason": empty_reason,
         "empty_suggestions": empty_suggestions,
+        "grounding": _plan_grounding(rated),
     }
     # cache the finished plan so a repeat/near-identical request is instant
     # (skip caching an empty/failed plan so a fixed corpus later can succeed)
     if use_cache and not empty_reason:
         try:
             from app.stores.cache import store as _cache_store
-            _cache_store("plan::" + request, result)
+            _cache_store(_cache_key, result)
         except Exception:
             pass
     return result

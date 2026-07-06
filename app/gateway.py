@@ -43,6 +43,11 @@ def _routes() -> dict[str, list[str]]:
         "reflect": fast,
         "research": strong,
         "write": strong,
+        # Agent tool-calling loops make MANY calls per run — route them to the
+        # fast/cheap model. Tool SELECTION doesn't need the strong model; this
+        # cuts agent cost ~5-10x. They still fall back to strong on failure.
+        "dossier": fast,
+        "agent": fast,
     }
 
 
@@ -87,6 +92,16 @@ def chat(task: str, messages: list[dict], user_id: str | None = None, **kw) -> s
 def chat_json(task: str, messages: list[dict], user_id: str | None = None, **kw):
     chain, _, _ = _resolve(task, user_id)
     return llm.chat_json(messages, model_chain=chain, **kw)
+
+
+def chat_tools(task: str, messages: list[dict], tools: list[dict],
+               tool_registry: dict, user_id: str | None = None, **kw):
+    """Agentic tool-calling loop routed by task. The model decides which tools
+    to call and when to stop — used by the true agents (research, rating,
+    verifier), not the workflow steps."""
+    chain, _, _ = _resolve(task, user_id)
+    return llm.chat_tools(messages, tools=tools, tool_registry=tool_registry,
+                          model_chain=chain, **kw)
 
 
 def chat_stream(task: str, messages: list[dict], on_token=None,

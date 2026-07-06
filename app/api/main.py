@@ -78,6 +78,27 @@ class PlanRequest(BaseModel):
     user_id: str | None = None
 
 
+class ConverseRequest(BaseModel):
+    message: str
+    contract: dict | None = None
+    session_id: str | None = None
+    asked: int = 0
+    user_id: str | None = None
+
+
+@app.post("/plan_converse")
+def plan_converse(req: ConverseRequest, user_id: str = Depends(current_user)):
+    """One turn of the planning conversation. Returns {action: ask|plan, message,
+    contract, asked, request}. When action=='plan', `request` is the self-contained
+    planning string to feed /dossier_stream to build the trip."""
+    from app.agents.plan_conversation import converse, build_request_from_contract
+    result = converse(req.message, req.contract, session_id=req.session_id,
+                      user_id=user_id, asked=req.asked)
+    if result["action"] == "plan":
+        result["request"] = build_request_from_contract(result["contract"])
+    return JSONResponse(result)
+
+
 @app.post("/plan")
 def plan(req: PlanRequest, user_id: str = Depends(current_user)):
     """Constraint-faithful trip planning.
@@ -94,6 +115,45 @@ def plan(req: PlanRequest, user_id: str = Depends(current_user)):
         result = plan_trip(req.query, user_id=user_id)
     flush()
     return JSONResponse(result)
+
+
+@app.post("/dossier")
+def dossier(req: PlanRequest, user_id: str = Depends(current_user)):
+    """Multi-agent professional trip dossier.
+
+    Runs the constraint-faithful itinerary (the spine) and then a team of
+    specialist agents (sense-of-place, logistics, dining, seasonal weather,
+    practical prep) in parallel, an auditor that enforces quality, coherence and
+    accessibility-consistency (nothing left-out may sneak back in), and a writer
+    that composes the premium concierge-voice dossier. Returns the structured
+    dossier object; the UI renders the Style-C view and reuses the itinerary +
+    map from the same structure.
+    """
+    from app.agents.dossier_graph import build_dossier
+    with request_trace("dossier", req.query):
+        result = build_dossier(req.query, user_id=user_id)
+    flush()
+    return JSONResponse(result)
+
+
+@app.post("/dossier_stream")
+def dossier_stream(req: PlanRequest, user_id: str = Depends(current_user)):
+    """Streaming version of /dossier: emits Server-Sent Events as each agent in
+    the multi-agent pipeline completes, so the UI can show a live progress
+    tracker, then a final event with the composed Travel Brief. Same result as
+    /dossier, just streamed stage-by-stage.
+    """
+    from app.agents.dossier_graph import build_dossier_stream
+
+    def event_source():
+        with request_trace("dossier_stream", req.query):
+            for ev in build_dossier_stream(req.query, user_id=user_id):
+                yield f"data: {json.dumps(ev)}\n\n"
+        flush()
+
+    return StreamingResponse(event_source(), media_type="text/event-stream",
+                             headers={"Cache-Control": "no-cache",
+                                      "X-Accel-Buffering": "no"})
 
 
 class FeedbackRequest(BaseModel):

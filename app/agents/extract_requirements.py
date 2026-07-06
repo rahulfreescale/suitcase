@@ -63,16 +63,36 @@ Extract these fields:
   vegetarian">}}. Empty list if none.
 - other: list of short free-text requirements that don't fit above (e.g.
   "wants museums", "romantic", "near the water"). Empty list if none.
+- preferences: object capturing SOFT context that should shape recommendations
+  (not hard constraints). Keys (include only those stated, else null):
+    * "travel_month": the month or season if mentioned ("December", "summer"), else null
+    * "climate": how they feel about weather if stated ("hates cold", "loves
+      warm", "can't do heat"), else null
+    * "interests": short list of things they're into ("food", "history",
+      "nightlife"), else []
+  Only capture what the user actually said — do not infer a month from nothing.
+- special_needs: object flagging specific accessibility needs the traveler
+  states (include only those clearly stated; all default false):
+    * "medical": true if they mention a medical condition, chronic illness,
+      needing pharmacies/hospitals/medication access nearby.
+    * "sensory": true if they mention autism, sensory sensitivity, anxiety in
+      crowds, needing quiet/calm/low-stimulation spaces.
+    * "heat_sensitive": true if they mention overheating, tiring easily, low
+      stamina, a heart/lung condition, pregnancy, or not coping with heat.
+  Only set true when the user actually states the need — never infer.
 
 Rules:
 - Capture, do not classify hard/soft. Preserve dietary "phrasing" verbatim.
 - Do NOT invent requirements the user didn't state.
-- destination and trip_length_days are REQUIRED for planning. If EITHER is
-  missing, set needs_more=true and missing_required=[the missing field name(s)].
-  Otherwise needs_more=false and missing_required=[].
+- ONLY destination and trip_length_days are REQUIRED. NOTHING else is required —
+  an empty travelers list, no budget, no dietary, no special_needs are all FINE
+  and must NOT set needs_more. Set needs_more=true ONLY if destination OR
+  trip_length_days is genuinely missing, and missing_required=[those field(s)].
+  If both destination and trip_length_days are present, needs_more=false and
+  missing_required=[] — no matter what else is empty.
 
 Return ONLY JSON with keys: destination, trip_length_days, travelers, budget,
-dietary, other, needs_more, missing_required.
+dietary, other, preferences, special_needs, needs_more, missing_required.
 
 Request: {q}"""
 
@@ -93,6 +113,13 @@ def _detected_labels(contract: dict) -> list[str]:
         found.append("budget")
     if contract.get("dietary"):
         found.append("dietary")
+    sn = contract.get("special_needs") or {}
+    if sn.get("medical"):
+        found.append("medical")
+    if sn.get("sensory"):
+        found.append("sensory")
+    if sn.get("heat_sensitive"):
+        found.append("heat-sensitive")
     if contract.get("trip_length_days") is not None:
         found.append("trip_length")
     return found
@@ -119,11 +146,28 @@ def extract_requirements(state: AgentState) -> AgentState:
         "budget": out.get("budget"),
         "dietary": out.get("dietary") or [],
         "other": out.get("other") or [],
+        "preferences": out.get("preferences") or {},
+        "special_needs": out.get("special_needs") or {},
     }
     detected = _detected_labels(contract)
     suggested = [c for c in _SUPPORTED if c not in detected]
     missing_required = out.get("missing_required") or []
     needs_more = bool(out.get("needs_more"))
+
+    # GUARD: the model sometimes flags needs_more because a NON-required field is
+    # empty (e.g. no travelers). Only destination + trip_length_days are truly
+    # required — override the model if both are present.
+    truly_missing = []
+    if not contract.get("destination"):
+        truly_missing.append("destination")
+    if not contract.get("trip_length_days"):
+        truly_missing.append("trip_length_days")
+    if truly_missing:
+        needs_more = True
+        missing_required = truly_missing
+    else:
+        needs_more = False
+        missing_required = []
 
     log_step(state.get("thread_id", "-"), "02_extract_requirements",
              {"node": "extract_requirements", "detected": detected,

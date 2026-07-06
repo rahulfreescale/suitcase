@@ -80,6 +80,15 @@ class Settings(BaseSettings):
     langfuse_secret_key: str | None = None
     langfuse_host: str = "http://localhost:3000"
 
+    # external travel-data tools (all optional; specialists degrade gracefully)
+    ors_api_key: str | None = None          # OpenRouteService (routing). No key -> routing skipped.
+    enable_weather_tool: bool = True        # Open-Meteo (no key needed)
+    enable_airquality_tool: bool = True     # Open-Meteo air quality (no key needed)
+    enable_verifier_agent: bool = True      # 3rd agent: tool-using fact-checker (vs plain auditor)
+    enable_routing_tool: bool = True        # requires ors_api_key to actually run
+    enable_places_tool: bool = True         # OpenStreetMap/Overpass accessible places (no key)
+    enable_holidays_tool: bool = True       # Nager.Date public holidays / closures (no key)
+
     # Live-traffic evaluation (daily batch)
     live_eval_sample_size: int = 25
     live_eval_min_faithfulness: float = 0.7

@@ -1,0 +1,11 @@
+city,place,is_famous,wheelchair,toddler,senior,confidence,note,source,lat,lng
+Venice,St. Mark's Basilica,True,TOUGH,TOUGH,TOUGH,LOW,"Multiple steps at entrance; interior has uneven floors and tight spaces, though some accessibility accommodations exist.",llm knowledge,45.4345479,12.3398218
+Venice,Doge's Palace,True,TOUGH,TOUGH,TOUGH,LOW,Grand staircase required for main entrance; limited elevator access to upper floors.,llm knowledge,45.4342108,12.340592
+Venice,Grand Canal,True,GOOD,GOOD,GOOD,LOW,Accessible by vaporetto (water bus) with wheelchair spaces; waterfront promenades vary in accessibility.,llm knowledge,45.437773,12.3355904
+Venice,Rialto Bridge,True,FAIL,FAIL,FAIL,LOW,Famous arched bridge with 40+ steps on both sides; no elevator or ramp alternative.,llm knowledge,45.4380688,12.3356548
+Venice,St. Mark's Square,True,GOOD,GOOD,GOOD,LOW,"Large open paved area is level and step-free, though can be crowded and wet during acqua alta (flooding).",llm knowledge,45.4342571,12.3386717
+Venice,Accademia Gallery,True,GOOD,GOOD,GOOD,LOW,Elevator access available; most galleries are on accessible floors with step-free entry.,llm knowledge,45.4313662,12.3280919
+Venice,Basilica di Santa Maria della Salute,True,TOUGH,TOUGH,TOUGH,LOW,Elevated entrance with multiple steps; interior has uneven marble floors.,llm knowledge,,
+Venice,Bridge of Sighs,True,FAIL,FAIL,FAIL,LOW,Accessible only via Doge's Palace tour which requires climbing stairs; bridge itself is narrow and historic.,llm knowledge,45.4340597,12.3408609
+Venice,Peggy Guggenheim Collection,True,GOOD,GOOD,GOOD,LOW,Modern museum with elevator access and step-free galleries on main floors.,llm knowledge,45.4308025,12.3315406
+Venice,Vaporetto Water Bus System,True,GOOD,GOOD,GOOD,LOW,Primary transport with designated wheelchair spaces; some stops have variable accessibility depending on water levels.,llm knowledge,,

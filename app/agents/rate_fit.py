@@ -308,7 +308,11 @@ def rate_activity(activity: dict, contract: dict, user_id=None) -> dict:
                  else "TOUGH" if blended >= 20 else "FAIL")
         overall = {"label": label, "score": blended}
     else:
-        overall = {"label": "TOUGH", "score": 35}  # no constraints to judge
+        # No constraints to judge: nothing disqualifies this place, so a valid
+        # famous attraction is a GOOD default fit (not TOUGH). Without this, an
+        # unconstrained trip scores everything below the good-fit threshold and
+        # places nothing — an empty plan.
+        overall = {"label": "GOOD", "score": 70}
 
     ret_activity = {"name": activity.get("name"), "city": activity.get("city"),
                     "page": activity.get("page"), "text": text[:200]}

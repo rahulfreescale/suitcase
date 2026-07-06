@@ -1,0 +1,11 @@
+city,place,is_famous,wheelchair,toddler,senior,confidence,note,source
+Dehradun,Robbers Cave (Guchhupani),True,FAIL,TOUGH,TOUGH,LOW,Natural cave with steep rocky terrain and uneven paths; requires climbing and wading through water.,llm knowledge
+Dehradun,Tapkeshwar Temple,True,FAIL,TOUGH,TOUGH,LOW,Located in a cave with 40+ steps down and uneven rocky terrain; no ramps or lifts available.,llm knowledge
+Dehradun,Mindrolling Monastery,True,GOOD,GOOD,GOOD,LOW,Large monastery with mostly level grounds and some paved pathways; main temple has steps but grounds are accessible.,llm knowledge
+Dehradun,Rajaji National Park,True,TOUGH,TOUGH,TOUGH,LOW,Wildlife sanctuary with forest trails; terrain is natural and uneven; vehicle safari options available.,llm knowledge
+Dehradun,Sahastradhara,True,TOUGH,TOUGH,TOUGH,LOW,"Waterfall and spring with rocky, slippery terrain and multiple steps; limited accessibility infrastructure.",llm knowledge
+Dehradun,Clock Tower (Ghanta Ghar),True,GOOD,GOOD,GOOD,LOW,Central landmark in town with level ground access; located in main market area with paved surroundings.,llm knowledge
+Dehradun,Lacchi Bar,True,UNKNOWN,UNKNOWN,UNKNOWN,LOW,Scenic viewpoint; accessibility details not well documented.,llm knowledge
+Dehradun,Forest Research Institute (FRI),True,GOOD,GOOD,GOOD,LOW,Large campus with paved roads and relatively level terrain; museum buildings have step-free entry.,llm knowledge
+Dehradun,Paltan Bazaar,True,GOOD,GOOD,GOOD,LOW,Main shopping area with paved streets and level access; crowded but navigable for most mobility needs.,llm knowledge
+Dehradun,Doon School,True,UNKNOWN,UNKNOWN,UNKNOWN,LOW,Historic school with limited public access; accessibility for visitors not clearly established.,llm knowledge

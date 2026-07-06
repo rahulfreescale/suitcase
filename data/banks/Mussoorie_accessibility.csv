@@ -1,0 +1,11 @@
+city,place,is_famous,wheelchair,toddler,senior,confidence,note,source,lat,lng
+Mussoorie,Mall Road,True,TOUGH,TOUGH,TOUGH,LOW,Steep pedestrian shopping street with uneven pavements and no dedicated ramps; challenging for mobility devices.,llm knowledge,30.45449,78.0846714
+Mussoorie,Gun Hill,True,FAIL,FAIL,FAIL,LOW,Requires steep uphill trek or cable car; cable car access is limited and terrain is very steep.,llm knowledge,30.459428,78.0747902
+Mussoorie,Camel's Back Road,True,TOUGH,TOUGH,TOUGH,LOW,"Scenic walking trail with uneven surfaces, steep sections, and no accessibility infrastructure.",llm knowledge,,
+Mussoorie,Kempty Falls,True,TOUGH,TOUGH,TOUGH,LOW,Waterfall requiring trek through forest terrain with rocky paths and stream crossings.,llm knowledge,,
+Mussoorie,Christ Church,True,GOOD,GOOD,GOOD,LOW,Historic church with step-free entry and relatively accessible interior for visitors.,llm knowledge,,
+Mussoorie,Mussoorie Lake,True,GOOD,GOOD,GOOD,LOW,Scenic lake with paved walking paths and accessible viewpoints around the perimeter.,llm knowledge,30.4463902,78.0780008
+Mussoorie,Lal Tibba,True,FAIL,FAIL,FAIL,LOW,Highest point requiring steep uphill climb with no vehicular or lift access available.,llm knowledge,,
+Mussoorie,Jag Mandir Palace,True,TOUGH,TOUGH,TOUGH,LOW,Historic palace on elevated terrain with stairs and uneven grounds; limited accessibility features.,llm knowledge,,
+Mussoorie,Happy Valley School,True,UNKNOWN,UNKNOWN,UNKNOWN,LOW,Historic school building; accessibility details for public visitors are not well documented.,llm knowledge,30.4720511,78.0508889
+Mussoorie,Mussoorie Bazaar,True,TOUGH,TOUGH,TOUGH,LOW,"Crowded market area with narrow lanes, uneven surfaces, and steep sections throughout.",llm knowledge,30.4556724,78.0962966
