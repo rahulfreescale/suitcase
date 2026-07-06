@@ -344,6 +344,7 @@ locals {
     { name = "EMBED_MODEL", value = "text-embedding-3-small" },
     { name = "EMBED_DIM", value = "1536" },
     { name = "RERANK_BACKEND", value = "none" },
+    { name = "LANGFUSE_HOST", value = "https://us.cloud.langfuse.com" },
     { name = "OPENSEARCH_HOST", value = aws_opensearch_domain.kb.endpoint },
     { name = "OPENSEARCH_PORT", value = "443" },
     { name = "OPENSEARCH_USE_SSL", value = "true" },
@@ -452,6 +453,7 @@ resource "aws_lb" "app" {
   load_balancer_type = "application"
   subnets            = aws_subnet.public[*].id
   security_groups    = [aws_security_group.alb.id]
+  idle_timeout       = 300
   tags               = local.tags
 }
 resource "aws_lb_target_group" "api" {

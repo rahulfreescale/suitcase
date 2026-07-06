@@ -118,14 +118,36 @@ def chat_tools(messages: list[dict], tools: list[dict], tool_registry: dict,
             convo = list(messages)
             trace = []
             for _i in range(max_iters):
-                resp = litellm.completion(
-                    model=model, messages=convo, tools=tools,
-                    tool_choice="auto", temperature=temperature,
-                    max_tokens=max_tokens, num_retries=_s.llm_num_retries,
-                    timeout=_s.llm_timeout_s,
-                )
-                msg = resp["choices"][0]["message"]
-                tool_calls = msg.get("tool_calls") or []
+                # Wrap each tool-loop call in a Langfuse generation span so the
+                # tools offered AND the tool the model requests are traced —
+                # essential for production debugging of agent behaviour.
+                with generation("agent-tool-call", model, convo) as gen:
+                    resp = litellm.completion(
+                        model=model, messages=convo, tools=tools,
+                        tool_choice="auto", temperature=temperature,
+                        max_tokens=max_tokens, num_retries=_s.llm_num_retries,
+                        timeout=_s.llm_timeout_s,
+                    )
+                    msg = resp["choices"][0]["message"]
+                    tool_calls = msg.get("tool_calls") or []
+                    if gen is not None:
+                        try:
+                            # log what tools were offered + what the model chose
+                            chose = [{"name": tc["function"]["name"],
+                                      "args": tc["function"].get("arguments")}
+                                     for tc in tool_calls]
+                            u = getattr(resp, "usage", None)
+                            usage = {"input": getattr(u, "prompt_tokens", None),
+                                     "output": getattr(u, "completion_tokens", None)} if u else None
+                            gen.update(
+                                output={"tool_calls_requested": chose,
+                                        "content": msg.get("content")},
+                                usage_details=usage,
+                                metadata={"tools_offered": [
+                                    t.get("function", t).get("name") for t in tools],
+                                    "iteration": _i})
+                        except Exception:
+                            pass
                 if not tool_calls:
                     # model is done — plain content is the final answer
                     return {"content": msg.get("content") or "", "trace": trace,
