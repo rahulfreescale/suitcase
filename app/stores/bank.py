@@ -105,6 +105,7 @@ def list_places(city: str) -> list:
             "text": (r.get("note") or "").strip(),   # bank note as description
             "section_hint": None,
             "from_bank": True,
+            "image_url": (r.get("image_url") or "").strip(),
         }
         lat, lng = (r.get("lat") or "").strip(), (r.get("lng") or "").strip()
         if lat and lng:

@@ -215,6 +215,13 @@ def _lazy_build_bank(city: str, user_id: str | None = None) -> None:
             coords = _td.geocode_place(r.get("place", ""), city)
             if coords:
                 r["lat"], r["lng"] = coords[0], coords[1]
+        # image backfill: a canonical Wikimedia Commons photo for the place
+        # (free / CC / PD). Empty string if none — the UI just shows no photo.
+        if not r.get("image_url"):
+            try:
+                r["image_url"] = _td.wiki_place_image(r.get("place", ""), city) or ""
+            except Exception:
+                r["image_url"] = ""
 
     bank_dir = Path("data/banks")
     bank_dir.mkdir(parents=True, exist_ok=True)
@@ -222,7 +229,7 @@ def _lazy_build_bank(city: str, user_id: str | None = None) -> None:
     with open(path, "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=["city", "place", "is_famous", "wheelchair",
                                           "toddler", "senior", "confidence", "note",
-                                          "source", "lat", "lng"])
+                                          "source", "lat", "lng", "image_url"])
         w.writeheader(); w.writerows(rows)
     bank_store._load_city.cache_clear()  # so the new bank is picked up
 

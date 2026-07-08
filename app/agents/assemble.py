@@ -217,6 +217,7 @@ def assemble_itinerary(rated_activities: list[dict], contract: dict) -> dict:
             "page": act.get("page"),
             "overall": rated["overall"],
             "per_constraint": rated["per_constraint"],
+            "image_url": act.get("image_url") or "",
         }
         if act.get("lat") is not None and act.get("lng") is not None:
             block["lat"], block["lng"] = act["lat"], act["lng"]

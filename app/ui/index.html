@@ -172,6 +172,7 @@
   .ppill.EXCELLENT,.ppill.GOOD{background:#E4F1EC;color:var(--go)}
   .ppill.TOUGH{background:#F6ECD6;color:#B8862B}
   .pnote{font-size:12px;line-height:1.45;color:#6E6A60;margin:7px 0 2px;padding-right:22px}
+  .pthumb{float:right;width:72px;height:72px;object-fit:cover;border-radius:9px;margin:0 0 6px 12px;border:1px solid var(--line);background:#F0EDE6}
   .ppill.FAIL{background:#F6DDD9;color:#C0392B}
   .ppill.UNKNOWN{background:#EEEBE3;color:#8A9099}
   .sktag.UNKNOWN{background:#ECEAE4;color:#8A9099;border:1px dashed #CBC7BC}
@@ -735,15 +736,27 @@ function pillsFor(item){
   const per=item.per_constraint||{};
   return Object.keys(per).map(k=>ppill(k.replace(/_/g," "),per[k].label)).join("");
 }
-// Pick the most informative accessibility note for a placed stop. per_constraint
-// carries a citation per need (bank note, guide sentence, or the onboarding
-// agent's evidence — including wiki-grounded detail). Prefer the wheelchair
-// citation, then any non-empty one; skip generic "no relevant info" fillers.
+// Pick the most informative accessibility note for a placed stop, PRIORITIZING
+// the traveler's actual constraints. per_constraint carries a citation per need
+// (bank note, guide sentence, or the onboarding agent's wiki-grounded evidence).
+// A toddler trip should surface the toddler/stroller note, not the wheelchair
+// one — so we order by what was actually detected for this trip, then fall back
+// to any informative citation. Skip generic "no relevant info" fillers.
 function noteFor(item){
   const per=item.per_constraint||{};
-  const order=["wheelchair","toddler","senior","budget"];
-  const keys=order.filter(k=>per[k]).concat(Object.keys(per).filter(k=>!order.includes(k)));
-  for(const k of keys){
+  const st=planState||{};
+  const detected=((st.chips&&st.chips.detected)||[]).map(x=>String(x).toLowerCase());
+  // active constraints first (in the order the user's needs were detected),
+  // then a sensible default order for anything not explicitly detected.
+  // map detected chip names -> the per_constraint KEY names rate_fit produces
+  const KEYMAP={"toddler":"toddler-friendly","stroller":"toddler-friendly","senior":"senior-friendly","wheelchair":"wheelchair","budget":"budget"};
+  const fallback=["wheelchair","toddler-friendly","senior-friendly","budget"];
+  const detKeys=detected.map(d=>KEYMAP[d]||d);
+  const seen=new Set();
+  const order=[];
+  detKeys.concat(fallback).forEach(k=>{ if(per[k]&&!seen.has(k)){ seen.add(k); order.push(k); } });
+  Object.keys(per).forEach(k=>{ if(!seen.has(k)){ seen.add(k); order.push(k); } });
+  for(const k of order){
     const c=(per[k]&&per[k].citation)||"";
     if(c && !/^no (relevant info|step-free)/i.test(c) && c.length>12) return c;
   }
@@ -780,7 +793,9 @@ function renderState(){
         const fitCls=lbl==="TOUGH"?" is-tough":(lbl==="FAIL"?" is-fail":"");
         blocks+=`<div class="pblk${fitCls}" draggable="true" data-di="${di}" data-slot="${slot}" data-kind="placed">
           <span class="grip"><i></i><i></i><i></i><i></i><i></i><i></i></span>
-          <div class="slot">${slot}</div><div class="nm">${esc(b.name_hint)}</div>
+          <div class="slot">${slot}</div>
+          ${b.image_url?`<img class="pthumb" src="${esc(b.image_url)}" alt="${esc(b.name_hint)} — photo" loading="lazy" onerror="this.style.display='none'"/>`:""}
+          <div class="nm">${esc(b.name_hint)}</div>
           <div class="ppills">${pillsFor(b)}</div>
           ${(()=>{const n=noteFor(b);return n?`<div class="pnote">${esc(n)}</div>`:"";})()}
           <div class="fbrow" data-place="${esc(b.name_hint)}" data-label="${esc((b.overall&&b.overall.label)||"")}">
