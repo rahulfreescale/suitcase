@@ -2,7 +2,7 @@
 # `python`, or inside a virtualenv. Override like:  make install PY=python3.11
 PY ?= python3
 
-.PHONY: help venv up up-obs down install index ingest run eval health simulate eval-live batch
+.PHONY: help venv up up-obs down install index ingest run eval health simulate eval-live test-injection test-email batch
 
 help:
 	@echo "make venv        - create a .venv virtual environment"
@@ -33,6 +33,8 @@ eval:       ; $(PY) -m eval.run_ragas
 health:     ; $(PY) -m scripts.healthcheck
 simulate:   ; $(PY) -m eval.simulate_traffic --n 30 --concurrency 4
 eval-live:  ; $(PY) -m eval.live_traffic_eval
+test-injection: ; $(PY) -m eval.test_injection
+test-email: ; $(PY) -m eval.test_email_security
 batch:      ; ./scripts/run_daily_batch.sh
 
 simulate-users:  ## emulate multi-user production traffic (5 users x 3 turns)

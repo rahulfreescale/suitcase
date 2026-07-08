@@ -20,6 +20,7 @@ _INJECTION_PATTERNS = [
     r"new\s+instructions?\s*:",
     r"system\s+prompt\b",
     r"</?\s*(system|user|assistant)\s*>",
+    r"</?\s*untrusted[a-z0-9_]*\s*>",   # stop payloads closing our wrapper early
     r"rate\s+(everything|every\s+place|all)\b.{0,30}(excellent|good|high)",
     r"mark\s+(everything|every\s+place|all)\b.{0,30}(excellent|good|accessible)",
     r"forget\s+(everything|all|the\s+above)",
