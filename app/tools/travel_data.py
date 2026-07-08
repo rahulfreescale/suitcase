@@ -746,3 +746,104 @@ def holidays_in_window(city: str, start: str | None, end: str | None) -> dict:
     return {"kind": "holidays", "country": country, "holidays": hits,
             "note": ("Public holiday(s) during the trip - expect some attractions "
                      "closed and reduced transit; verify hours for those days.")}
+
+
+# --------------------------------------------------------------------------
+# WIKIPEDIA  (narrative accessibility detail + place images, no key)
+# Wikimedia REST API. Only ever hits en.wikipedia.org -> SSRF-safe by
+# construction (no arbitrary/user-supplied URLs). Returned text is UNTRUSTED:
+# callers must isolate()/sanitize() it before feeding it to a model.
+# --------------------------------------------------------------------------
+def _wiki_summary(place: str) -> dict:
+    """Raw Wikipedia REST summary for a title. Internal; returns {} on miss."""
+    title = urllib.parse.quote((place or "").strip().replace(" ", "_"))
+    if not title:
+        return {}
+    try:
+        return _get_json(
+            f"https://en.wikipedia.org/api/rest_v1/page/summary/{title}",
+            {}, headers={"accept": "application/json"}) or {}
+    except Exception:
+        return {}
+
+
+# Sentences that mention these are the ones worth showing the rating agent.
+_ACCESS_KEYWORDS = (
+    "accessib", "wheelchair", "step-free", "step free", "stair", "steps",
+    "ramp", "lift", "elevator", "escalator", "disabled", "mobility",
+    "entrance", "cobble", "uneven", "terrain", "slope", "level access",
+    "toilet", "restroom", "facilities", "hill", "climb",
+)
+
+
+def _wiki_full_extract(title: str, lang_site: str = "en.wikipedia.org") -> str:
+    """Full plain-text article extract via the MediaWiki Query API (not the
+    short summary). Returns '' on miss. lang_site lets us hit wikivoyage too."""
+    t = (title or "").strip()
+    if not t:
+        return ""
+    try:
+        data = _get_json(
+            f"https://{lang_site}/w/api.php",
+            {"action": "query", "prop": "extracts", "explaintext": "1",
+             "redirects": "1", "format": "json", "titles": t})
+        pages = ((data or {}).get("query", {}) or {}).get("pages", {}) or {}
+        for _pid, page in pages.items():
+            ex = page.get("extract") or ""
+            if ex:
+                return ex
+    except Exception:
+        pass
+    return ""
+
+
+def _accessibility_sentences(text: str, limit: int = 6) -> str:
+    """Pull the sentences most likely to describe accessibility, so we feed the
+    agent the relevant part of a long article rather than the whole thing."""
+    if not text:
+        return ""
+    import re as _re
+    sentences = _re.split(r"(?<=[.!?])\s+", text)
+    hits = [s.strip() for s in sentences
+            if any(k in s.lower() for k in _ACCESS_KEYWORDS)]
+    if hits:
+        return " ".join(hits[:limit])[:1500]
+    # no explicit accessibility sentences — fall back to the first bit of the
+    # article so the agent at least has context (still marked untrusted upstream)
+    return " ".join(sentences[:3])[:800]
+
+
+@lru_cache(maxsize=512)
+def wiki_accessibility_notes(place: str, city: str = "") -> dict:
+    """Narrative accessibility detail about a place (step-free entrances, lifts,
+    stairs, terrain) that OSM tags don't capture. Strategy:
+      1. Full Wikipedia article -> pull the accessibility-relevant sentences.
+      2. If Wikipedia is thin, try Wikivoyage (travel-focused, more likely to
+         mention access) for the place, then the city.
+    Returns {place, text, source_url}. `text` is UNTRUSTED external content —
+    the caller MUST isolate() it before putting it in a prompt. Empty on miss."""
+    # 1. Wikipedia full article, accessibility sentences
+    full = _wiki_full_extract(place, "en.wikipedia.org")
+    notes = _accessibility_sentences(full)
+    source = f"https://en.wikipedia.org/wiki/{urllib.parse.quote((place or '').replace(' ', '_'))}"
+
+    # 2. If nothing useful, try Wikivoyage for the place, then the city page.
+    if not notes:
+        wv = _wiki_full_extract(place, "en.wikivoyage.org") or \
+             (_wiki_full_extract(city, "en.wikivoyage.org") if city else "")
+        wv_notes = _accessibility_sentences(wv)
+        if wv_notes:
+            notes = wv_notes
+            src_title = place if _wiki_full_extract(place, "en.wikivoyage.org") else city
+            source = f"https://en.wikivoyage.org/wiki/{urllib.parse.quote((src_title or '').replace(' ', '_'))}"
+
+    return {"place": place, "text": notes, "source_url": source if notes else ""}
+
+
+@lru_cache(maxsize=512)
+def wiki_place_image(place: str, city: str = "") -> str:
+    """Canonical image URL for a place from Wikipedia (Wikimedia Commons,
+    CC/PD licensed). Returns '' if none found."""
+    data = _wiki_summary(place)
+    return (((data.get("thumbnail") or {}).get("source", ""))
+            or ((data.get("originalimage") or {}).get("source", "")))
