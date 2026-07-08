@@ -57,11 +57,7 @@ You tell it what you need:
   uploads it and inserts a playable video link automatically.
 -->
 
-
-
-https://github.com/user-attachments/assets/7eb64feb-4a0a-4b91-b206-ed6fe6d23c20
-
-
+https://github.com/user-attachments/assets/REPLACE_BY_DRAGGING_demo.mp4_HERE
 
 > A full wheelchair-trip build, end to end: chat → live progress → finished itinerary with accessible stops, the "left out" list, and the day-by-day plan on a map.
 
@@ -142,6 +138,17 @@ Much of the reliability came from taking **pipeline-breaking decisions away from
 - SQL locked to **validated, read-only** statements.
 
 The pattern: *let the model own the content and the judgment calls, but not the control flow or anything with a blast radius.*
+
+### Security posture
+
+Suitcase is **advisory** — it plans trips, it doesn't book, pay, email, or execute anything — so the threat model isn't privileged-action abuse; it's **indirect prompt injection through retrieved content** and unsafe tool calls. The defenses in place map to that model:
+
+- **Prompt isolation.** Retrieved guide passages are treated strictly as *data to ground on*, never as instructions to follow. Grounding is gated on relevance and the requested city, so an out-of-corpus or off-topic chunk can't quietly steer the plan.
+- **Tool-call validation.** The text-to-SQL path is the clearest example: generated SQL is parsed and validated as a **single read-only `SELECT`** (via sqlglot), row-capped, and rejected otherwise, with a self-correcting retry. The model proposes; code decides whether the call is safe to run.
+- **Output guardrails.** Every accessibility rating must cite a source sentence; **uncited high ratings are automatically downgraded**, and hard constraints are locked by deterministic code the model can't override. Unverifiable claims are surfaced as *unknown* rather than asserted.
+- **Human-in-the-loop (planned).** Because there are no privileged actions today, there's no approval gate — the natural place for one is a review/approve step before any future booking-advisory action, which pairs with moving the plan build onto a durable workflow.
+
+Deliberately **out of scope**: least-privilege tool restriction and privilege separation, which matter when an agent can take real-world actions. Suitcase has none, so adding them would be defense against a threat it doesn't have — noted here as an explicit decision rather than an oversight.
 
 ---
 
