@@ -1612,14 +1612,14 @@ function openShareModal(){
     status.className="share-status";
     if(!addr){ status.textContent="Please enter an email address."; status.className="share-status err"; return; }
     if(!lastPlanQuery){ status.textContent="No trip to send yet."; status.className="share-status err"; return; }
-    sendB.disabled=true; status.textContent="Building your PDF and sending\u2026 this can take a moment.";
+    sendB.disabled=true; status.textContent="Submitting your request\u2026 building the PDF.";
     try{
-      const res=await fetch("/email_itinerary",{method:"POST",headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({recipient:addr,query:lastPlanQuery,confirm:true})});
+      const res=await fetch("/email_workflow/start",{method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({recipient:addr,query:lastPlanQuery})});
       const data=await res.json();
-      if(data.ok){ status.textContent=`Sent to ${data.recipient}. Check the inbox (and spam).`; status.className="share-status ok";
-        setTimeout(()=>{const o=document.querySelector(".share-ov"); if(o)o.remove();},2600); }
-      else { status.textContent=data.error||"Could not send. Check the email settings."; status.className="share-status err"; sendB.disabled=false; }
+      if(data.ok){ status.textContent=`Request submitted for ${addr}. An admin will review and approve it before it sends.`; status.className="share-status ok";
+        setTimeout(()=>{const o=document.querySelector(".share-ov"); if(o)o.remove();},3200); }
+      else { status.textContent=data.error||"Could not submit. Check the email settings."; status.className="share-status err"; sendB.disabled=false; }
     }catch(e){ status.textContent="Network error \u2014 please try again."; status.className="share-status err"; sendB.disabled=false; }
   };
   email.addEventListener("keydown",e=>{ if(e.key==="Enter") sendB.click(); });

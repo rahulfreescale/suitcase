@@ -21,7 +21,8 @@ import time
 
 from app.config import get_settings
 
-_SET_KEY = "email:pending"                 # a Redis HASH: workflow_id -> record json
+_SET_KEY = "email:pending"
+MAX_AGE_SECONDS = 3600   # prune index entries older than 1h                 # a Redis HASH: workflow_id -> record json
 _client = None
 
 
@@ -72,6 +73,9 @@ def remove_pending(workflow_id: str) -> None:
 def list_pending() -> list[dict]:
     """Return the recorded pending workflows (most recent first).
 
+    Entries older than MAX_AGE_SECONDS are pruned on read — a dead/abandoned
+    workflow can't linger in the index forever and slow the admin list.
+
     NOTE: this returns the lightweight index records only. The caller enriches
     each with the live Temporal `status` query for the authoritative state.
     """
@@ -83,11 +87,17 @@ def list_pending() -> list[dict]:
     except Exception as e:  # noqa: BLE001
         print(f"[pending_index] list failed: {e}")
         return []
+    now = int(time.time())
     out = []
     for _id, blob in raw.items():
         try:
-            out.append(json.loads(blob))
+            rec = json.loads(blob)
         except Exception:  # noqa: BLE001
+            r.hdel(_SET_KEY, _id)   # unparseable — drop it
             continue
+        if now - int(rec.get("requested_at", now)) > MAX_AGE_SECONDS:
+            r.hdel(_SET_KEY, _id)   # too old — prune
+            continue
+        out.append(rec)
     out.sort(key=lambda x: x.get("requested_at", 0), reverse=True)
     return out

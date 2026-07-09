@@ -461,10 +461,11 @@ async def email_workflow_status(workflow_id: str,
 async def admin_pending(user_id: str = Depends(current_user)):
     """List workflows awaiting admin action, enriched with live Temporal state.
 
-    Reads the Redis index for the in-flight ids (instant), then queries each
-    workflow's `status` for the authoritative state. Terminal-state workflows
-    are pruned from the index as we notice them, so the list stays clean.
+    Queries every pending workflow's status CONCURRENTLY with a short timeout,
+    so the page stays fast and a dead/stale entry can't hang the whole list.
+    Terminal-state (and long-dead) workflows are pruned as we notice them.
     """
+    import asyncio
     from app.stores.pending_index import list_pending, remove_pending
     records = list_pending()
     if not records:
@@ -474,26 +475,29 @@ async def admin_pending(user_id: str = Depends(current_user)):
         from app.workflows.common import get_client
         from app.workflows.email_approval import EmailApprovalWorkflow
         client = await get_client()
-    except Exception as e:  # noqa: BLE001
-        # Temporal down — return the raw index without live state rather than 503,
-        # so the admin page still shows *something*.
+    except Exception:  # noqa: BLE001
         return {"ok": True, "pending": records, "note": "live state unavailable"}
+
+    async def _status(rec):
+        wid = rec.get("workflow_id")
+        try:
+            handle = client.get_workflow_handle(wid)
+            st = await asyncio.wait_for(
+                handle.query(EmailApprovalWorkflow.status), timeout=2.0)
+            return wid, st.get("state", "unknown"), st.get("destination", "")
+        except Exception:  # noqa: BLE001 (timeout, gone, failed-task, etc.)
+            return wid, "unknown", ""
+
+    results = await asyncio.gather(*[_status(r) for r in records])
+    by_id = {wid: (state, dest) for wid, state, dest in results}
 
     TERMINAL = {"sent", "rejected", "expired", "send_failed"}
     out = []
     for rec in records:
         wid = rec.get("workflow_id")
-        state = "unknown"
-        destination = ""
-        try:
-            handle = client.get_workflow_handle(wid)
-            st = await handle.query(EmailApprovalWorkflow.status)
-            state = st.get("state", "unknown")
-            destination = st.get("destination", "")
-        except Exception:  # noqa: BLE001
-            state = "unknown"
+        state, destination = by_id.get(wid, ("unknown", ""))
         if state in TERMINAL:
-            remove_pending(wid)      # prune finished ones
+            remove_pending(wid)
             continue
         out.append({**rec, "state": state, "destination": destination})
     return {"ok": True, "pending": out}
