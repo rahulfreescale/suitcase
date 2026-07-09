@@ -422,6 +422,37 @@
   .pinL .b span{transform:rotate(45deg);color:#fff;font-weight:700;font-size:12px;font-family:'Archivo',sans-serif}
   .pinS{width:24px;height:24px;border-radius:50%;background:#F3E0D4;border:2px solid var(--stamp);display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.22)}
   .pinS i{color:#8A3D1F;font-style:normal;font-size:13px;font-weight:700;line-height:1}
+.share-modal h3{margin:0 0 8px;}
+.share-modal input{width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #D8D2C6;border-radius:8px;font-size:14px;margin:6px 0 4px;}
+.share-row button{padding:9px 18px;border:none;border-radius:8px;font-size:13px;cursor:pointer;}
+.share-status.err{color:#C0392B;}
+.share-status.ok{color:#1E8449;}
+.share-btn{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.04em;padding:6px 15px;
+    border:1px solid var(--stamp);border-radius:100px;background:var(--card);color:var(--stamp);cursor:pointer;
+    font-weight:600;transition:all .15s;}
+.share-btn:hover{background:var(--stamp);color:#fff;}
+.share-ov{position:fixed;inset:0;background:rgba(14,22,34,.5);backdrop-filter:blur(3px);display:flex;
+    align-items:center;justify-content:center;z-index:9999;animation:shareIn .18s ease;}
+@keyframes shareIn{from{opacity:0}to{opacity:1}}
+.share-modal{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:30px 32px;
+    max-width:430px;width:90%;box-shadow:var(--shadow);animation:shareUp .2s ease;}
+@keyframes shareUp{from{transform:translateY(8px);opacity:0}to{transform:translateY(0);opacity:1}}
+.share-modal h3{margin:0 0 8px;font-size:19px;color:var(--ink);letter-spacing:-.01em;}
+.share-modal p{margin:0 0 4px;font-size:13.5px;line-height:1.5;color:var(--ink2);}
+.share-modal input{width:100%;box-sizing:border-box;padding:11px 13px;border:1px solid var(--line);
+    border-radius:9px;font-size:14px;margin:14px 0 2px;background:var(--paper);color:var(--ink);
+    font-family:inherit;transition:border-color .15s;}
+.share-modal input:focus{outline:none;border-color:var(--stamp);background:var(--card);}
+.share-row{display:flex;gap:10px;justify-content:flex-end;margin-top:18px;}
+.share-row button{padding:10px 20px;border:none;border-radius:9px;font-size:13px;font-weight:600;
+    cursor:pointer;font-family:inherit;transition:opacity .15s;}
+.share-row button:hover{opacity:.88;}
+.share-cancel{background:var(--paper);color:var(--ink2);border:1px solid var(--line)!important;}
+.share-send{background:var(--stamp);color:#fff;}
+.share-send:disabled{opacity:.55;cursor:default;}
+.share-status{font-size:12.5px;margin-top:14px;min-height:16px;color:var(--ink2);}
+.share-status.err{color:var(--stamp);}
+.share-status.ok{color:var(--go);}
 </style>
 </head>
 <body>
@@ -767,6 +798,7 @@ function renderState(){
   const st=planState; if(!st) return;
   let html=`<div class="plan-top"><div class="plan-dest">${esc(st.destination||"Trip")}<small>${esc(st.dl)} ${st.dl==1?"day":"days"}</small></div>`;
   html+=`<div class="plan-top-r"><div id="viewToggle" class="vtoggle"><button class="vt-btn on" data-view="plan">Plan</button><button class="vt-btn" data-view="dossier">Travel Brief</button></div>`;
+  html+=`<button id="shareBtn" class="share-btn" title="Email this trip as a PDF">✉ Share</button>`;
   html+=`<div class="verdict${st.crit.needs_replan?" replan":""}">${st.crit.needs_replan?"needs replan":"plan holds"}</div></div></div>`;
   // chips
   const det=(st.chips.detected||[]).map(x=>`<span class="pchip det">${esc(x.replace(/_/g," "))}</span>`).join("");
@@ -850,6 +882,7 @@ function renderState(){
   renderMap();
   const vt=document.getElementById("viewToggle");
   if(vt){ vt.querySelectorAll(".vt-btn").forEach(b=>b.onclick=()=>switchView(b.dataset.view)); }
+  const sb=document.getElementById("shareBtn"); if(sb){ sb.onclick=openShareModal; }
   _wireMealExpanders();
   const pb=document.getElementById("pdfBtn"); if(pb) pb.onclick=exportPDF;
 }
@@ -1550,6 +1583,46 @@ function renderDossier(d){
   _syncViewToggle();
   const vtd=document.getElementById("viewToggleDsr");
   if(vtd){ vtd.querySelectorAll(".vt-btn").forEach(b=>b.onclick=()=>switchView(b.dataset.view)); }
+}
+
+// ---- Share via email (PDF attachment) ----
+function openShareModal(){
+  if(document.querySelector(".share-ov")) return;
+  const ov=document.createElement("div");
+  ov.className="share-ov";
+  ov.innerHTML=`<div class="share-modal">
+    <h3>Email this trip</h3>
+    <p>We'll send a branded PDF of your itinerary and Travel Brief as an attachment. Enter the recipient's email address.</p>
+    <input id="shareEmail" type="email" placeholder="name@example.com" autocomplete="off"/>
+    <div class="share-status" id="shareStatus"></div>
+    <div class="share-row">
+      <button class="share-cancel" id="shareCancel">Cancel</button>
+      <button class="share-send" id="shareSend">Send PDF</button>
+    </div>
+  </div>`;
+  document.body.appendChild(ov);
+  const email=ov.querySelector("#shareEmail");
+  const status=ov.querySelector("#shareStatus");
+  const sendB=ov.querySelector("#shareSend");
+  email.focus();
+  ov.querySelector("#shareCancel").onclick=()=>ov.remove();
+  ov.onclick=e=>{ if(e.target===ov) ov.remove(); };
+  sendB.onclick=async()=>{
+    const addr=(email.value||"").trim();
+    status.className="share-status";
+    if(!addr){ status.textContent="Please enter an email address."; status.className="share-status err"; return; }
+    if(!lastPlanQuery){ status.textContent="No trip to send yet."; status.className="share-status err"; return; }
+    sendB.disabled=true; status.textContent="Building your PDF and sending\u2026 this can take a moment.";
+    try{
+      const res=await fetch("/email_itinerary",{method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({recipient:addr,query:lastPlanQuery,confirm:true})});
+      const data=await res.json();
+      if(data.ok){ status.textContent=`Sent to ${data.recipient}. Check the inbox (and spam).`; status.className="share-status ok";
+        setTimeout(()=>{const o=document.querySelector(".share-ov"); if(o)o.remove();},2600); }
+      else { status.textContent=data.error||"Could not send. Check the email settings."; status.className="share-status err"; sendB.disabled=false; }
+    }catch(e){ status.textContent="Network error \u2014 please try again."; status.className="share-status err"; sendB.disabled=false; }
+  };
+  email.addEventListener("keydown",e=>{ if(e.key==="Enter") sendB.click(); });
 }
 
 sendEl.onclick=()=>go(qEl.value);
