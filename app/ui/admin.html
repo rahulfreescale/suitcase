@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Suitcase — approvals</title>
+<style>
+  :root{
+    --ink:#141C26; --ink2:#5C6773; --line:#DFDCD3; --paper:#EDE9E0;
+    --card:#FFFFFF; --navy:#1B2A4A; --stamp:#D8452B; --go:#12856A;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);
+    font-family:'Helvetica Neue',Arial,sans-serif;line-height:1.5}
+  .wrap{max-width:920px;margin:0 auto;padding:32px 24px 60px}
+  .top{display:flex;align-items:baseline;justify-content:space-between;
+    border-bottom:2px solid var(--stamp);padding-bottom:14px;margin-bottom:8px}
+  h1{font-size:24px;font-weight:800;margin:0;color:var(--navy)}
+  .sub{color:var(--ink2);font-size:13px;margin:6px 0 22px}
+  .bar{display:flex;align-items:center;gap:14px;margin-bottom:18px}
+  .count{font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.04em;
+    color:var(--ink2)}
+  .refresh{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:11px;
+    letter-spacing:.04em;padding:7px 14px;border:1px solid var(--line);border-radius:100px;
+    background:var(--card);color:var(--navy);cursor:pointer}
+  .refresh:hover{border-color:var(--navy)}
+  .dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px}
+  .dot.live{background:var(--go)}
+  .empty{background:var(--card);border:1px dashed var(--line);border-radius:14px;
+    padding:40px;text-align:center;color:var(--ink2);font-size:14px}
+  .row{background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:16px 18px;margin-bottom:12px;display:flex;align-items:center;gap:16px}
+  .row .main{flex:1;min-width:0}
+  .dest{font-size:16px;font-weight:700;color:var(--navy);margin-bottom:2px}
+  .to{font-size:13px;color:var(--ink2)}
+  .meta{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--ink2);
+    letter-spacing:.03em;margin-top:4px}
+  .state{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.08em;
+    text-transform:uppercase;padding:4px 9px;border-radius:100px;font-weight:700}
+  .state.pending_approval{background:#FBEEDC;color:#8A5A12}
+  .state.building{background:#EAEFF5;color:#345}
+  .state.sent{background:#E4F1EC;color:var(--go)}
+  .state.rejected,.state.expired,.state.send_failed{background:#FBEAE7;color:var(--stamp)}
+  .state.unknown{background:#EEE;color:#777}
+  .acts{display:flex;gap:8px}
+  .btn{font-size:12.5px;font-weight:600;padding:9px 16px;border:none;border-radius:9px;
+    cursor:pointer;font-family:inherit;transition:opacity .15s}
+  .btn:hover{opacity:.88}
+  .btn:disabled{opacity:.45;cursor:default}
+  .approve{background:var(--go);color:#fff}
+  .reject{background:var(--card);color:var(--stamp);border:1px solid var(--stamp)}
+  .note{font-size:12px;color:var(--ink2);margin-top:2px}
+  .err{color:var(--stamp);font-size:13px;margin:10px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <h1>Approvals</h1>
+    <span class="count"><span class="dot live"></span>auto-refresh 5s</span>
+  </div>
+  <p class="sub">Trip emails awaiting review. Each is a durable workflow that has
+    built its PDF and parked — approving sends it; rejecting drops it. Nothing is
+    lost if this page (or a worker) restarts.</p>
+
+  <div class="bar">
+    <span class="count" id="countLbl">loading…</span>
+    <button class="refresh" id="refreshBtn">refresh now</button>
+  </div>
+
+  <div id="err" class="err" style="display:none"></div>
+  <div id="list"></div>
+</div>
+
+<script>
+const listEl = document.getElementById("list");
+const countLbl = document.getElementById("countLbl");
+const errEl = document.getElementById("err");
+
+function fmtAge(ts){
+  if(!ts) return "";
+  const s = Math.max(0, Math.floor(Date.now()/1000 - ts));
+  if(s < 60) return s + "s ago";
+  if(s < 3600) return Math.floor(s/60) + "m ago";
+  return Math.floor(s/3600) + "h ago";
+}
+
+async function load(){
+  try{
+    const res = await fetch("/admin/pending");
+    const data = await res.json();
+    errEl.style.display = "none";
+    render(data.pending || []);
+  }catch(e){
+    errEl.textContent = "Could not load pending approvals — is the API running?";
+    errEl.style.display = "block";
+  }
+}
+
+function render(items){
+  countLbl.textContent = items.length
+    ? items.length + " awaiting approval"
+    : "nothing pending";
+  if(!items.length){
+    listEl.innerHTML = '<div class="empty">No trips awaiting approval right now.</div>';
+    return;
+  }
+  listEl.innerHTML = items.map(it => {
+    const state = it.state || "unknown";
+    const canAct = state === "pending_approval";
+    return `<div class="row" data-id="${it.workflow_id}">
+      <div class="main">
+        <div class="dest">${esc(it.destination || "Trip")}</div>
+        <div class="to">to ${esc(it.recipient || "")}</div>
+        <div class="meta">${esc(it.workflow_id)} · ${fmtAge(it.requested_at)}</div>
+      </div>
+      <span class="state ${state}">${state.replace(/_/g," ")}</span>
+      <div class="acts">
+        <button class="btn approve" ${canAct?"":"disabled"}>Approve</button>
+        <button class="btn reject" ${canAct?"":"disabled"}>Reject</button>
+      </div>
+    </div>`;
+  }).join("");
+
+  listEl.querySelectorAll(".row").forEach(row => {
+    const id = row.dataset.id;
+    row.querySelector(".approve").onclick = () => act(id, "approve", row);
+    row.querySelector(".reject").onclick = () => act(id, "reject", row);
+  });
+}
+
+async function act(id, which, row){
+  const btns = row.querySelectorAll(".btn");
+  btns.forEach(b => b.disabled = true);
+  const stateEl = row.querySelector(".state");
+  stateEl.textContent = which === "approve" ? "sending…" : "rejecting…";
+  try{
+    const res = await fetch(`/admin/email_workflow/${id}/${which}`, {method:"POST"});
+    const data = await res.json();
+    if(data.ok){
+      stateEl.textContent = which === "approve" ? "sent" : "rejected";
+      stateEl.className = "state " + (which === "approve" ? "sent" : "rejected");
+      setTimeout(load, 1200);   // refresh to prune it from the list
+    }else{
+      stateEl.textContent = "error";
+      btns.forEach(b => b.disabled = false);
+    }
+  }catch(e){
+    stateEl.textContent = "error";
+    btns.forEach(b => b.disabled = false);
+  }
+}
+
+function esc(s){ return String(s==null?"":s).replace(/[&<>"]/g,
+  c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+
+document.getElementById("refreshBtn").onclick = load;
+load();
+setInterval(load, 5000);   // auto-refresh
+</script>
+</body>
+</html>

@@ -530,3 +530,12 @@ async def _signal_workflow(workflow_id: str, which: str):
         pass
     return {"ok": True, "workflow_id": workflow_id, "signal": which}
 
+
+@app.get("/admin", response_class=HTMLResponse)
+def admin_page():
+    """Serve the approvals admin page (lists parked email-approval workflows).
+    Read fresh each request so UI edits appear on refresh (no server restart)."""
+    from pathlib import Path
+    _admin_path = Path(__file__).parent.parent / "ui" / "admin.html"
+    return _admin_path.read_text()
+
