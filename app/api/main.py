@@ -364,3 +364,169 @@ def email_itinerary(req: EmailRequest, user_id: str = Depends(current_user)):
     except Exception as e:
         return JSONResponse({"ok": False, "error": f"could not build/send: {type(e).__name__}"},
                             status_code=500)
+
+
+# ============================================================================
+# EMAIL-APPROVAL WORKFLOW ENDPOINTS  — append to app/api/main.py
+# ============================================================================
+# Two channels through the Temporal server:
+#   submit:  POST /email_workflow/start           (the Share button)
+#   status:  GET  /email_workflow/{id}            (the user's page polls this)
+#   list:    GET  /admin/pending                  (the admin page loads this)
+#   signal:  POST /admin/email_workflow/{id}/approve  and  /reject
+#
+# The /admin/pending list is served from a small Redis index (app/stores/
+# pending_index.py) for instant reads; the authoritative per-workflow state
+# comes from Temporal's `status` query, which we merge in.
+#
+# Everything is wrapped so that if Temporal isn't running (server down, or the
+# worker isn't up), the endpoints return a clean 503 instead of a 500 — nothing
+# breaks when you're not running the Temporal path.
+
+import uuid as _uuid
+from pydantic import BaseModel
+
+
+class EmailWorkflowRequest(BaseModel):
+    query: str                    # the trip request, to build the plan + PDF
+    recipient: str                # single validated email address
+
+
+def _temporal_unavailable(detail: str):
+    return JSONResponse({"ok": False, "error": f"workflow engine unavailable: {detail}"},
+                        status_code=503)
+
+
+@app.post("/email_workflow/start")
+async def email_workflow_start(req: EmailWorkflowRequest,
+                               user_id: str = Depends(current_user)):
+    """Submit an email-approval workflow — the durable version of the Share action.
+
+    Validates the recipient (fail fast), starts the workflow on Temporal (which
+    builds the PDF then parks awaiting approval), records it in the pending index,
+    and returns immediately with the workflow id. No waiting for the build.
+    """
+    from app.config import get_settings
+    from app.services.email_sender import EmailError, validate_recipient
+    if not get_settings().enable_email:
+        return JSONResponse({"ok": False, "error": "email feature disabled"},
+                            status_code=403)
+    try:
+        validate_recipient(req.recipient)
+    except EmailError as e:
+        return JSONResponse({"ok": False, "error": str(e)}, status_code=400)
+
+    workflow_id = "email-" + _uuid.uuid4().hex[:12]
+    try:
+        from app.workflows.common import TASK_QUEUE, get_client
+        from app.workflows.email_approval import (EmailApprovalWorkflow,
+                                                  EmailApprovalInput)
+        client = await get_client()
+        await client.start_workflow(
+            EmailApprovalWorkflow.run,
+            EmailApprovalInput(query=req.query, recipient=req.recipient,
+                               user_id=user_id),
+            id=workflow_id,
+            task_queue=TASK_QUEUE,
+        )
+    except Exception as e:  # noqa: BLE001
+        return _temporal_unavailable(type(e).__name__)
+
+    # record in the fast index so the admin page can list it
+    try:
+        from app.stores.pending_index import add_pending
+        add_pending(workflow_id, req.recipient, req.query)
+    except Exception:  # noqa: BLE001
+        pass  # index is best-effort; the workflow still exists in Temporal
+
+    return {"ok": True, "workflow_id": workflow_id, "state": "pending_approval"}
+
+
+@app.get("/email_workflow/{workflow_id}")
+async def email_workflow_status(workflow_id: str,
+                                user_id: str = Depends(current_user)):
+    """Live status of one workflow (building / pending_approval / sent / ...)."""
+    try:
+        from app.workflows.common import get_client
+        from app.workflows.email_approval import EmailApprovalWorkflow
+        client = await get_client()
+        handle = client.get_workflow_handle(workflow_id)
+        status = await handle.query(EmailApprovalWorkflow.status)
+    except Exception as e:  # noqa: BLE001
+        return _temporal_unavailable(type(e).__name__)
+    return {"ok": True, "workflow_id": workflow_id, **status}
+
+
+@app.get("/admin/pending")
+async def admin_pending(user_id: str = Depends(current_user)):
+    """List workflows awaiting admin action, enriched with live Temporal state.
+
+    Reads the Redis index for the in-flight ids (instant), then queries each
+    workflow's `status` for the authoritative state. Terminal-state workflows
+    are pruned from the index as we notice them, so the list stays clean.
+    """
+    from app.stores.pending_index import list_pending, remove_pending
+    records = list_pending()
+    if not records:
+        return {"ok": True, "pending": []}
+
+    try:
+        from app.workflows.common import get_client
+        from app.workflows.email_approval import EmailApprovalWorkflow
+        client = await get_client()
+    except Exception as e:  # noqa: BLE001
+        # Temporal down — return the raw index without live state rather than 503,
+        # so the admin page still shows *something*.
+        return {"ok": True, "pending": records, "note": "live state unavailable"}
+
+    TERMINAL = {"sent", "rejected", "expired", "send_failed"}
+    out = []
+    for rec in records:
+        wid = rec.get("workflow_id")
+        state = "unknown"
+        destination = ""
+        try:
+            handle = client.get_workflow_handle(wid)
+            st = await handle.query(EmailApprovalWorkflow.status)
+            state = st.get("state", "unknown")
+            destination = st.get("destination", "")
+        except Exception:  # noqa: BLE001
+            state = "unknown"
+        if state in TERMINAL:
+            remove_pending(wid)      # prune finished ones
+            continue
+        out.append({**rec, "state": state, "destination": destination})
+    return {"ok": True, "pending": out}
+
+
+@app.post("/admin/email_workflow/{workflow_id}/approve")
+async def admin_approve(workflow_id: str, user_id: str = Depends(current_user)):
+    """Send the approve signal to a parked workflow — it wakes and sends."""
+    return await _signal_workflow(workflow_id, "approve")
+
+
+@app.post("/admin/email_workflow/{workflow_id}/reject")
+async def admin_reject(workflow_id: str, user_id: str = Depends(current_user)):
+    """Send the reject signal to a parked workflow — it exits without sending."""
+    return await _signal_workflow(workflow_id, "reject")
+
+
+async def _signal_workflow(workflow_id: str, which: str):
+    try:
+        from app.workflows.common import get_client
+        from app.workflows.email_approval import EmailApprovalWorkflow
+        client = await get_client()
+        handle = client.get_workflow_handle(workflow_id)
+        sig = (EmailApprovalWorkflow.approve if which == "approve"
+               else EmailApprovalWorkflow.reject)
+        await handle.signal(sig)
+    except Exception as e:  # noqa: BLE001
+        return _temporal_unavailable(type(e).__name__)
+    # remove from the pending index (best-effort; admin_pending also prunes)
+    try:
+        from app.stores.pending_index import remove_pending
+        remove_pending(workflow_id)
+    except Exception:  # noqa: BLE001
+        pass
+    return {"ok": True, "workflow_id": workflow_id, "signal": which}
+
