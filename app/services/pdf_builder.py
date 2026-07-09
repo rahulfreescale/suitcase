@@ -191,12 +191,34 @@ def _ensure_lib_path():
                 break
 
 
+def _img_url_fetcher(url):
+    """WeasyPrint URL fetcher with a real User-Agent + timeout, so Wikimedia
+    serves images (its default fetcher gets a 403) and a slow/blocked image
+    degrades gracefully instead of blanking the whole PDF."""
+    import urllib.request, base64
+    from weasyprint import default_url_fetcher
+    if url.startswith(("http://", "https://")):
+        try:
+            req = urllib.request.Request(url, headers={
+                "User-Agent": "Suitcase/1.0 (accessibility travel planner)"})
+            with urllib.request.urlopen(req, timeout=8) as r:
+                data = r.read()
+                ctype = r.headers.get("Content-Type", "image/jpeg")
+            return {"string": data, "mime_type": ctype.split(";")[0]}
+        except Exception:
+            px = base64.b64decode(
+                "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk"
+                "+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==")
+            return {"string": px, "mime_type": "image/png"}
+    return default_url_fetcher(url)
+
+
 def render_pdf(plan: dict, dossier: dict | None = None) -> bytes:
     """Render the itinerary+brief to PDF bytes via WeasyPrint."""
     _ensure_lib_path()
     from weasyprint import HTML
     doc_html = build_itinerary_html(plan, dossier)
-    return HTML(string=doc_html).write_pdf()
+    return HTML(string=doc_html, url_fetcher=_img_url_fetcher).write_pdf()
 
 
 # ---- the HTML/CSS template (the approved design) --------------------------
@@ -227,7 +249,7 @@ _TEMPLATE = """<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/>
   .place {{ background:#fff; border:1px solid #DFDCD3; border-radius:14px; overflow:hidden;
     margin-bottom:26px; page-break-inside:avoid; }}
   .hero {{ width:100%; height:240px; object-fit:cover; display:block; background:#E6E2D8; }}
-  .hero-empty {{ background:#E6E2D8; }}
+  .hero-empty {{ height:8px; background:#D8452B; }}
   .place-body {{ padding:22px 26px 24px; }}
   .slot {{ font-size:9.5px; letter-spacing:.16em; text-transform:uppercase; color:#A7ADB5; }}
   .place-name {{ font-weight:700; font-size:22px; color:#1B2A4A; margin:2px 0 12px; }}

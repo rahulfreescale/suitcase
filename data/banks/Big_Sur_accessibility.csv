@@ -1,11 +1,11 @@
-city,place,is_famous,wheelchair,toddler,senior,confidence,note,source,lat,lng
-Big Sur,Bixby Bridge,True,TOUGH,TOUGH,TOUGH,LOW,"Iconic bridge with pullouts for viewing, but uneven terrain and no dedicated accessible parking near best viewpoints.",llm knowledge,36.3715858,-121.9019320
-Big Sur,McWay Falls,True,GOOD,GOOD,GOOD,LOW,Julia Burns State Park has accessible parking and a paved 0.5-mile trail to the waterfall viewpoint.,llm knowledge,36.1578211,-121.6723958
-Big Sur,Pfeiffer Beach,True,TOUGH,TOUGH,TOUGH,LOW,Famous purple sand beach requires steep downhill walk from parking; no wheelchair access to beach itself.,llm knowledge,36.2393647,-121.8176055
-Big Sur,Point Lobos State Natural Reserve,True,GOOD,GOOD,GOOD,LOW,Multiple accessible parking areas and several paved or well-maintained trails with ocean views.,llm knowledge,36.5147324,-121.9427876
-Big Sur,Andrew Molera State Park,True,TOUGH,TOUGH,TOUGH,LOW,Beach access requires walking across sand and river ford; limited accessible facilities.,llm knowledge,36.2796459,-121.8309512
-Big Sur,Pfeiffer Big Sur State Park,True,GOOD,GOOD,GOOD,LOW,Accessible parking and paved trails including the popular Pfeiffer Falls trail with minimal elevation gain.,llm knowledge,36.2533055,-121.7832953
-Big Sur,Nepenthe Restaurant,True,TOUGH,TOUGH,TOUGH,LOW,Iconic clifftop restaurant with steps and uneven terrain; limited wheelchair accessibility despite its fame.,llm knowledge,36.2218116,-121.7596565
-Big Sur,Ventana Wilderness Sanctuary,True,TOUGH,TOUGH,TOUGH,LOW,Hiking-focused preserve with rugged trails; not designed for wheelchair or limited-mobility access.,llm knowledge,,
-Big Sur,Big Sur River Gorge,True,TOUGH,TOUGH,TOUGH,LOW,"Scenic gorge viewable from Highway 1 pullouts, but best views require hiking on uneven terrain.",llm knowledge,,
-Big Sur,Ewoldsen Trail,True,FAIL,FAIL,FAIL,LOW,Popular hiking trail with steep elevation gain and no wheelchair or stroller access.,llm knowledge,36.1729255,-121.6661638
+city,place,is_famous,wheelchair,toddler,senior,confidence,note,source,lat,lng,image_url
+Big Sur,Bixby Bridge,True,TOUGH,TOUGH,TOUGH,LOW,"Iconic bridge with pullouts for viewing, but uneven terrain and no dedicated accessible parking near best viewpoints.",llm knowledge,36.3715858,-121.9019320,
+Big Sur,McWay Falls,True,GOOD,GOOD,GOOD,LOW,Julia Burns State Park has accessible parking and a paved 0.5-mile trail to the waterfall viewpoint.,llm knowledge,36.1578211,-121.6723958,
+Big Sur,Pfeiffer Beach,True,TOUGH,TOUGH,TOUGH,LOW,Famous purple sand beach requires steep downhill walk from parking; no wheelchair access to beach itself.,llm knowledge,36.2393647,-121.8176055,
+Big Sur,Point Lobos State Natural Reserve,True,GOOD,GOOD,GOOD,LOW,Multiple accessible parking areas and several paved or well-maintained trails with ocean views.,llm knowledge,36.5147324,-121.9427876,
+Big Sur,Andrew Molera State Park,True,TOUGH,TOUGH,TOUGH,LOW,Beach access requires walking across sand and river ford; limited accessible facilities.,llm knowledge,36.2796459,-121.8309512,
+Big Sur,Pfeiffer Big Sur State Park,True,GOOD,GOOD,GOOD,LOW,Accessible parking and paved trails including the popular Pfeiffer Falls trail with minimal elevation gain.,llm knowledge,36.2533055,-121.7832953,
+Big Sur,Nepenthe Restaurant,True,TOUGH,TOUGH,TOUGH,LOW,Iconic clifftop restaurant with steps and uneven terrain; limited wheelchair accessibility despite its fame.,llm knowledge,36.2218116,-121.7596565,
+Big Sur,Ventana Wilderness Sanctuary,True,TOUGH,TOUGH,TOUGH,LOW,Hiking-focused preserve with rugged trails; not designed for wheelchair or limited-mobility access.,llm knowledge,,,
+Big Sur,Big Sur River Gorge,True,TOUGH,TOUGH,TOUGH,LOW,"Scenic gorge viewable from Highway 1 pullouts, but best views require hiking on uneven terrain.",llm knowledge,,,
+Big Sur,Ewoldsen Trail,True,FAIL,FAIL,FAIL,LOW,Popular hiking trail with steep elevation gain and no wheelchair or stroller access.,llm knowledge,36.1729255,-121.6661638,

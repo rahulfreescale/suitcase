@@ -1,0 +1,11 @@
+city,place,is_famous,wheelchair,toddler,senior,confidence,note,source,lat,lng
+Vadodara,Laxmi Vilas Palace,True,TOUGH,TOUGH,TOUGH,LOW,"Grand palace with multiple levels, stairs between sections, and uneven grounds; limited wheelchair accessibility despite its scale.",llm knowledge,22.2918544,73.1883335
+Vadodara,Baroda Museum & Picture Gallery,True,GOOD,GOOD,GOOD,LOW,Main galleries have ramps and lifts; ground floor is accessible though upper floors may require assistance.,llm knowledge,22.3121051,73.1885862
+Vadodara,Sayaji Baug (Zoo & Garden),True,GOOD,EXCELLENT,GOOD,LOW,"Large park with paved pathways, accessible entry, and facilities; some areas have gentle slopes but mostly navigable.",llm knowledge,,
+Vadodara,Maharaja Fateh Singh Museum,True,TOUGH,TOUGH,TOUGH,LOW,Historic palace with multiple staircases and uneven floors; limited modern accessibility modifications.,llm knowledge,,
+Vadodara,Kirti Mandir,True,TOUGH,TOUGH,TOUGH,LOW,Temple with steps at entrance and interior stairs; traditional design with minimal accessibility features.,llm knowledge,,
+Vadodara,EME Court (Akota),True,UNKNOWN,UNKNOWN,UNKNOWN,LOW,Historic colonial structure; accessibility details not well documented.,llm knowledge,,
+Vadodara,Champaner-Pavagadh Archaeological Park,True,FAIL,FAIL,FAIL,LOW,UNESCO site on hilltop requiring steep climbs and uneven terrain; not suitable for mobility challenges.,llm knowledge,,
+Vadodara,Vadodara Central Museum,True,GOOD,GOOD,GOOD,LOW,"Modern facility with ramps, lifts, and accessible restrooms on multiple floors.",llm knowledge,,
+Vadodara,Sursagar Lake,True,GOOD,GOOD,GOOD,LOW,Scenic lakeside promenade with paved walking paths and accessible entry points.,llm knowledge,,
+Vadodara,Navlakhi Temple,True,TOUGH,TOUGH,TOUGH,LOW,Ancient temple with steep steps and traditional architecture; limited accessibility infrastructure.,llm knowledge,,
