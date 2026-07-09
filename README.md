@@ -85,6 +85,7 @@ https://github.com/user-attachments/assets/REPLACE_BY_DRAGGING_demo.mp4_HERE
 - **Interactive map** of the whole plan.
 - **Practical guidance** per trip — accessibility notes, weather, current air-quality (AQI), local emergency numbers, and getting-around info.
 - **Thumbs up / down** on any part of the plan — feedback that shapes how places get rated over time.
+- **Share as a PDF by email** — send any finished itinerary and Travel Brief to a single recipient as a branded PDF (with per-place photos), behind a confirmation step.
 
 ---
 
@@ -141,14 +142,22 @@ The pattern: *let the model own the content and the judgment calls, but not the 
 
 ### Security posture
 
-Suitcase is **advisory** — it plans trips, it doesn't book, pay, email, or execute anything — so the threat model isn't privileged-action abuse; it's **indirect prompt injection through retrieved content** and unsafe tool calls. The defenses in place map to that model:
+Suitcase started **advisory** — plan trips, don't book, pay, or execute anything — so the original threat model wasn't privileged-action abuse; it was **indirect prompt injection through retrieved content** and unsafe tool calls. Those defenses still hold:
 
 - **Prompt isolation.** Retrieved guide passages are treated strictly as *data to ground on*, never as instructions to follow. Grounding is gated on relevance and the requested city, so an out-of-corpus or off-topic chunk can't quietly steer the plan.
 - **Tool-call validation.** The text-to-SQL path is the clearest example: generated SQL is parsed and validated as a **single read-only `SELECT`** (via sqlglot), row-capped, and rejected otherwise, with a self-correcting retry. The model proposes; code decides whether the call is safe to run.
 - **Output guardrails.** Every accessibility rating must cite a source sentence; **uncited high ratings are automatically downgraded**, and hard constraints are locked by deterministic code the model can't override. Unverifiable claims are surfaced as *unknown* rather than asserted.
-- **Human-in-the-loop (planned).** Because there are no privileged actions today, there's no approval gate — the natural place for one is a review/approve step before any future booking-advisory action, which pairs with moving the plan build onto a durable workflow.
 
-Deliberately **out of scope**: least-privilege tool restriction and privilege separation, which matter when an agent can take real-world actions. Suitcase has none, so adding them would be defense against a threat it doesn't have — noted here as an explicit decision rather than an oversight.
+**Then I added exactly one privileged action — emailing a trip as a PDF — on purpose.** An advisory system can't demonstrate action-taking security, because there's no action to secure. Adding a single, narrow send capability made the action-taking controls real rather than hypothetical, and they're scoped tightly to it:
+
+- **Tool validation on the action.** The recipient is validated before anything is built — a single, well-formed address, rejecting multi-recipient lists and header-injection (a `\nBcc:` smuggled into the address). Bad input fails fast, before the expensive dossier/PDF build.
+- **Human-in-the-loop.** The send refuses unless an explicit `confirm` is passed; the UI shows a confirmation step. An agent can *propose* a send, but the send can't happen without a human in the loop.
+- **Least privilege — no raw body.** The send function takes only structured itinerary inputs (recipient, destination, PDF). There is **no** parameter for arbitrary message text — the body is built in code and HTML-escaped. So even if injected content reached this far, there's no channel through which it could become the outgoing message.
+- **Privilege separation.** The send capability lives in the API layer, isolated from the agents that read untrusted web/guide content — an injection in fetched content has no path to trigger a send.
+
+The two suites that prove this — an adversarial **prompt-injection** test and an **email-security** test (recipient validation, the confirm gate, and the no-raw-body check) — run in CI and must stay green.
+
+The design rule is the same one that governs the planner: *let the model own content and judgment, but never the control flow or anything with a blast radius.* Email is the one place Suitcase takes a real action, so it's the one place those controls had to become concrete.
 
 ---
 
