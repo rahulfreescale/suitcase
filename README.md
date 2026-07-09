@@ -167,6 +167,21 @@ The two suites that prove this — an adversarial **prompt-injection** test and 
 
 The design rule is the same one that governs the planner: *let the model own content and judgment, but never the control flow or anything with a blast radius.* Email is the one place Suitcase takes a real action, so it's the one place those controls had to become concrete.
 
+### Stage 2 — the human-in-the-loop gate as a durable workflow
+
+The `confirm` boolean above is the *simplest* version of a human-in-the-loop gate: the client sends `confirm: true` and the send happens synchronously inside that one request. It works, but it isn't durable — the pending send lives inside an open HTTP request, so a crash mid-approval loses it, there's no separate reviewer, and a long human delay ties up the request.
+
+Stage 2 replaces that boolean with a **durable Temporal workflow**, and separates the *request* to send from the *approval* to send:
+
+- **Submit.** Clicking "Share" starts a workflow and returns immediately — no waiting on the build. The workflow runs the PDF build as an activity, then **parks**, awaiting a decision.
+- **Park.** The parked wait isn't a polling loop — Temporal suspends the workflow to durable storage. It occupies no compute while waiting and can sit parked for as long as the approval window allows.
+- **Approve.** A separate **admin approvals page** lists every parked request. An admin clicks Approve, which delivers a **signal** to the workflow (addressed by its id, routed through the Temporal server). The signal wakes the workflow, which runs the send activity. Reject or a timeout ends it without sending.
+
+The property that makes this worth the machinery: **the parked state lives in the Temporal server, not the worker.** Kill the worker mid-approval and nothing is lost — the pending send survives, PDF already built, and any worker resumes it the moment the approval arrives. The same least-privilege, tool-validation, and privilege-separation controls from the synchronous path still apply — the send activity is the only thing that can send, and only a validated recipient with a human approval gets there.
+
+The one-line version: *the gate went from a boolean in a single request to a durable workflow that survives a crash — I killed the only worker mid-approval and the pending send didn't die, because Temporal holds the state, not the process.*
+
+
 ---
 
 ---
