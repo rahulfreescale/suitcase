@@ -57,7 +57,15 @@ You tell it what you need:
   uploads it and inserts a playable video link automatically.
 -->
 
-https://github.com/user-attachments/assets/REPLACE_BY_DRAGGING_demo.mp4_HERE
+
+
+
+
+https://github.com/user-attachments/assets/972e42f5-554e-4d5f-b413-1de4c91f5873
+
+
+
+
 
 > A full wheelchair-trip build, end to end: chat → live progress → finished itinerary with accessible stops, the "left out" list, and the day-by-day plan on a map.
 
