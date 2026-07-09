@@ -304,3 +304,63 @@ def voice_speak_get(text: str):
     (progressive playback). Same streaming TTS as the POST endpoint."""
     from app.voice import synthesize_stream
     return StreamingResponse(synthesize_stream(text), media_type="audio/mpeg")
+
+
+class EmailRequest(BaseModel):
+    recipient: str                    # single validated email address
+    query: str                        # the trip request, to rebuild plan + dossier
+    confirm: bool = False             # human-in-the-loop: must be True to send
+
+
+@app.post("/email_itinerary")
+def email_itinerary(req: EmailRequest, user_id: str = Depends(current_user)):
+    """Send a trip itinerary to a single recipient — a PRIVILEGED action.
+
+    Security controls on this endpoint:
+      - Human-in-the-loop: refuses unless req.confirm is True (the UI shows a
+        confirmation step; Stage 2 replaces this with a Temporal approval signal).
+      - Least privilege: delegates to email_sender.send_itinerary, which can ONLY
+        send a fixed-format itinerary to ONE validated recipient — no general
+        send-arbitrary-email capability exists.
+      - Tool validation: the recipient address is validated (single, well-formed,
+        no header-injection) before any send.
+      - Privilege separation: this send capability lives here, isolated from the
+        onboarding agent that reads untrusted web content — an injection in fetched
+        content has no path to trigger a send.
+    """
+    from app.config import get_settings
+    from app.services.email_sender import send_itinerary_pdf, EmailError, validate_recipient
+    if not get_settings().enable_email:
+        return JSONResponse({"ok": False, "error": "email feature disabled"}, status_code=403)
+
+    # Validate the recipient up-front (tool-validation) so we fail fast before
+    # doing the expensive dossier/PDF build for a bad address.
+    try:
+        validate_recipient(req.recipient)
+    except EmailError as e:
+        return JSONResponse({"ok": False, "error": str(e)}, status_code=400)
+
+    if not req.confirm:
+        # human-in-the-loop gate: don't build or send until the user confirms
+        return JSONResponse({"ok": False, "needs_confirmation": True,
+                             "message": f"Send this itinerary to {req.recipient}?"},
+                            status_code=200)
+    try:
+        # Build the plan + full Travel Brief (dossier), then render the PDF.
+        from app.agents.dossier_graph import build_dossier
+        from app.agents.plan_pipeline import plan_trip
+        from app.services.pdf_builder import render_pdf
+        dossier = build_dossier(req.query, user_id=user_id)
+        # dossier carries itinerary + sections (prose + access_services) + meta.
+        # Fall back to a plain plan only if the dossier has no itinerary.
+        plan = {} if dossier.get("itinerary") else plan_trip(req.query, user_id=user_id)
+        dest = ((dossier.get("meta") or {}).get("destination")
+                or (plan.get("contract") or {}).get("destination") or "your trip")
+        pdf = render_pdf(plan, dossier)
+        result = send_itinerary_pdf(req.recipient, dest, pdf, confirm=True)
+        return {"ok": True, "status": result.get("status"), "recipient": result.get("recipient")}
+    except EmailError as e:
+        return JSONResponse({"ok": False, "error": str(e)}, status_code=400)
+    except Exception as e:
+        return JSONResponse({"ok": False, "error": f"could not build/send: {type(e).__name__}"},
+                            status_code=500)

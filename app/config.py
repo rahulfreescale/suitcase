@@ -82,6 +82,11 @@ class Settings(BaseSettings):
 
     # external travel-data tools (all optional; specialists degrade gracefully)
     ors_api_key: str | None = None          # OpenRouteService (routing). No key -> routing skipped.
+
+    # Email (SendGrid) — trip sharing. No key -> email feature disabled (honest).
+    sendgrid_api_key: str | None = None
+    email_from: str | None = None           # verified sender address on SendGrid
+    enable_email: bool = True               # requires sendgrid_api_key + email_from to actually send
     enable_weather_tool: bool = True        # Open-Meteo (no key needed)
     enable_airquality_tool: bool = True     # Open-Meteo air quality (no key needed)
     enable_verifier_agent: bool = True      # 3rd agent: tool-using fact-checker (vs plain auditor)

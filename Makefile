@@ -28,7 +28,7 @@ up-obs:     ; docker compose --profile core --profile observability up -d
 down:       ; docker compose --profile core --profile observability down
 index:      ; $(PY) -m scripts.create_opensearch_index && $(PY) -m scripts.create_dynamo_table
 ingest:     ; $(PY) -m ingest.run_ingest
-run:        ; $(PY) -m uvicorn app.api.main:app --host 0.0.0.0 --port 8080 --reload
+run:        ; DYLD_FALLBACK_LIBRARY_PATH=/opt/homebrew/lib:$$DYLD_FALLBACK_LIBRARY_PATH $(PY) -m uvicorn app.api.main:app --host 0.0.0.0 --port 8080 --reload
 eval:       ; $(PY) -m eval.run_ragas
 health:     ; $(PY) -m scripts.healthcheck
 simulate:   ; $(PY) -m eval.simulate_traffic --n 30 --concurrency 4
