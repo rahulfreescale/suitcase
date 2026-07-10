@@ -190,33 +190,46 @@ The one-line version: *the gate went from a boolean in a single request to a dur
 
 ## 🔎 Retrieval & the accessibility banks
 
-Two subsystems do the grounding: **retrieval** (finding the right guide material) and the **accessibility banks** (turning that material into trustworthy, constraint-aware ratings). They're the core of why the planner can be honest.
+Two subsystems do the grounding: **retrieval** (finding the right guide material) and the **accessibility banks** (turning that material into trustworthy, constraint-aware ratings). They're the core of why the planner can be honest instead of confidently wrong.
 
-### Retrieval — and the city-match problem
+### How a guide becomes searchable — ingest & chunking
 
-Plans are grounded in a curated **travel-guide corpus** — each city's guide is a structured markdown document (Overview, Neighborhoods, Things to Do, and so on), chunked, embedded, and indexed in OpenSearch. Retrieval for a plan runs the full pipeline: extract keywords → apply metadata filters → expand the query → **hybrid search** (vector + keyword) → **cross-encoder rerank** → assemble cited context.
+Each city's guide is a structured markdown document (Overview, Neighborhoods, Getting Around, Things to Do, and so on). Ingest is **section-aware**: the chunker splits on paragraph boundaries and packs paragraphs up to a ~900-character budget, so a chunk is a coherent passage rather than an arbitrary window that severs a sentence mid-thought. Each chunk carries its city/page metadata, embedded with **OpenAI `text-embedding-3-small`** (1536-dimensional) and indexed in **OpenSearch**, which holds both the dense vectors (for kNN) and the raw text (for keyword search) — one store serving both halves of hybrid retrieval.
 
-The subtle, important bug this design exists to prevent: **vector search returns nearest-neighbour chunks regardless of city.** Ask for an obscure or misspelled destination and the index will happily hand back the *semantically closest* chunks from entirely different cities — I watched an early build jam St. Stephen's Cathedral (Vienna), the Anne Frank House (Amsterdam), and a mountain from Cape Town into a single itinerary, each presented as if it belonged. Confidently wrong.
+### The retrieval pipeline — five stages, precision and recall engineered separately
 
-The fix is a **city-match gate**: retrieved chunks are filtered to those actually tagged with the requested city, and **if none match, the system refuses to ground on them** rather than relabelling a Vienna chunk with the requested city's name. That refusal is what routes an out-of-corpus city to the onboarding agent instead of hallucinating a plan. Grounding, here, means *"only trust a chunk if it's genuinely about this place"* — not just *"it's nearby in vector space."*
+A plan doesn't run a single vector lookup. Retrieval is a five-stage pipeline, each stage doing one job:
+
+1. **Keyword extraction** — an LLM pulls the terms most useful for keyword search out of the natural-language request (with a plain-split fallback if the call fails), so the lexical half of the search has good query terms, not the raw sentence.
+2. **Metadata filtering** — a few-shot-prompted step emits a small equality filter (`{"city": "Lisbon"}`, `{"region": "Asia"}`, or `{}`) that maps to OpenSearch term filters. This shrinks the search space to the right city/region *before* scoring — the first line of defense against cross-city bleed.
+3. **Query expansion** — a smaller, faster model rewrites the question into a handful of semantically equivalent variants (synonyms, alternate phrasings), always keeping the original and any city names intact. This is a **recall** booster: a traveler's wording shouldn't decide whether a relevant passage is found.
+4. **Hybrid search** — for each expanded query, run semantic (kNN over the OpenAI vectors) *and* keyword search under the metadata filter, min-max normalize each score set, and blend **0.7 semantic / 0.3 keyword**. Scores are aggregated across all expansions keeping each chunk's best, yielding ~20 candidates. Semantic finds meaning; keyword anchors on exact terms (place names, specific words) that embeddings can smear — the blend gets both.
+5. **Cross-encoder rerank** — the ~20 candidates are re-scored by a **BAAI/bge-reranker-large** cross-encoder that reads each (query, chunk) pair jointly (unlike the bi-encoder embeddings, which encode query and chunk separately), and the **top 7** survive. Hybrid search is fast and approximate for **recall**; the reranker is slow and accurate for **precision** — so they're deliberately separate stages, cheap-and-wide then expensive-and-narrow.
+
+### The city-match gate — retrieval's most important guardrail
+
+The subtle, dangerous bug this design exists to prevent: **vector search returns nearest-neighbour chunks regardless of city.** Ask for an obscure or misspelled destination and the index will happily hand back the *semantically closest* chunks from entirely different cities — an early build jammed St. Stephen's Cathedral (Vienna), the Anne Frank House (Amsterdam), and a mountain from Cape Town into a single itinerary, each presented as if it belonged. Confidently wrong is the worst failure a planner can have.
+
+The fix is a **city-match / relevance gate**: retrieved chunks are filtered to those actually tagged with the requested city, and **if none match, the system refuses to ground on them** rather than relabelling a Vienna chunk with the requested city's name. That refusal is what routes an out-of-corpus city to the onboarding agent instead of hallucinating a plan. Grounding, here, means *"only trust a chunk if it's genuinely about this place"* — not just *"it's nearby in vector space."*
+
+### Decompose — from section prose to rateable places
+
+Retrieval returns **section-sized** chunks ("Getting Around: Prague has an excellent transit network…"), but the rater needs **individual places** ("Letná Park — flat, paved, step-free"). Rating a whole section against a wheelchair need is meaningless — an early build scored entire sections `TOUGH` and placed nothing. So a decompose step unpacks each chunk into candidate activities: named places, each carried with the **specific sentence(s) that describe it**, so the rater still has real, citable text to lock hard facts against. The prompt is told to return **nothing** for sections that hold no rateable places (Overview, Best Time to Visit) rather than inventing activities — and a deterministic **byte-identical-note backstop** drops any "place" whose description merely echoes a real place's text, so an *action* ("Coin Throwing") can't slip through carrying a real landmark's note. Each candidate is flagged `is_famous`, which is what lets the assembler build the "left out, and why" list of famous-but-inaccessible spots.
 
 ### The accessibility banks — precomputed, confidence-scored ratings
 
-A guide tells you a place exists; it doesn't reliably tell you whether a wheelchair user can get in. That's what the **banks** are for: a per-place accessibility dataset (a per-city CSV of ratings with **EXCELLENT / GOOD / TOUGH / FAIL** labels and **HIGH / MEDIUM / LOW** confidence). Corpus cities ship with curated banks; a place the planner considers is rated against the bank first.
+A guide tells you a place *exists*; it doesn't reliably tell you whether a wheelchair user can get in. That's what the **banks** are for: a per-place accessibility dataset (a per-city CSV of ratings with **EXCELLENT / GOOD / TOUGH / FAIL** labels and **HIGH / MEDIUM / LOW** confidence, plus a sourced note and coordinates). A place the planner considers is rated against the bank first.
 
-Crucially, banks are **read-through and lazy-filled**. When a city has no bank yet (`has_bank` returns false), one is **built and cached on first request** — corpus cities ship curated, anything new *self-warms on first ask*. Ask for the same city again and it's served from the cache instead of rebuilt. The main planning pass reads from the bank, then *supplements* with any retrieved places not yet in it — so the expensive rating work happens once per place, not once per request.
+Crucially, banks are **read-through and lazy-filled**. When a city has no bank yet, one is **built and cached on first request** — corpus cities ship curated, anything new *self-warms on first ask*. Ask for the same city again and it's served from cache instead of rebuilt. The main planning pass reads from the bank, then *supplements* with any retrieved places not yet in it — so the expensive rating work happens once per place, not once per request. The reason facts live in a lockable table rather than being re-derived by retrieval each time: **a table row can be locked, a fuzzy re-derivation can't.** If the bank says the Spanish Steps are a HIGH-confidence `FAIL`, no amount of fluent LLM prose can put them back on the plan.
 
 ### How a place gets rated — two layers, code has the final say
 
 The rating logic is deliberately split so the model never gets to be confidently wrong about something checkable:
 
-**Layer 1 — deterministic code (hard constraints).** For constraints where a fact can be checked — wheelchair access, budget — code decides and **locks** the result; the LLM cannot override it. A guide sentence mentioning "stairs," "cobblestones," or "no lift" locks wheelchair to FAIL/TOUGH with `basis: data`; a price above the stated limit locks budget to FAIL. If there's no signal at all, it's marked **unknown and flagged**, never guessed.
+- **Layer 1 — code locks the hard facts.** Hard constraints (wheelchair, budget) are decided by deterministic code against the bank. A code-decided `FAIL`/`TOUGH` carries `basis: data` and the model **cannot lift it**. Confidence controls how hard the lock is: a HIGH-confidence FAIL is a wall; a LOW-confidence one softens to "tough — verify" rather than blocking on thin evidence.
+- **Layer 2 — the model refines the soft judgment, within the lines code already drew.** Soft, subjective aspects (pace, toddler-friendliness as a preference) are the model's to weigh — but every soft rating must **cite a source sentence**, and an uncited high rating is automatically **downgraded**. Unverifiable claims surface as `UNKNOWN`, never guessed.
 
-**Layer 2 — constrained LLM (soft constraints).** For softer needs — toddler-friendly, senior-friendly, stroller, dietary-as-preference — the LLM judges, but on a tight leash: it must use the **fixed label set** (no free-form), it must **cite the guide sentence** it relied on, and *a rating with no real citation is automatically downgraded* so an uncited "EXCELLENT" can't sneak through. It's also shown the locked hard results and told not to contradict them.
-
-**Combine — code has the final say.** Any required hard FAIL drops the whole place to FAIL. Otherwise the overall score leans toward the **weakest constraint** (`0.6 × min + 0.4 × mean`), on the principle that *a plan is only as good as its worst fit* — a place that's wonderful for a toddler but impossible in a wheelchair is not a good fit for a family that needs both. Each rating carries its `label`, a hidden 0–100 `score` for ranking and day-fit percentages, a `basis` (`data` / `guide` / `unknown`), and its `citation`.
-
-This two-layer split is the whole reason the planner can say *"I couldn't verify this"* honestly: the checkable facts are locked by code, the judgment calls are cited and downgraded when unsupported, and anything with no evidence is surfaced as unknown rather than dressed up as a confident yes.
+The governing rule, the same one that runs through the whole system: *RAG describes; code decides.* Retrieval and the model own **content and judgment**; code owns anything **checkable or with a blast radius**.
 
 ## ⚙️ Production engineering
 
